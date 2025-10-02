@@ -2,6 +2,14 @@
 
 This guide documents the complete setup process for the SharePoint MCP server.
 
+## Notes
+
+- **Graph API is recommended** for new implementations due to better reliability
+- The `.egg-info` folder is created during `pip install -e .` and is normal
+- Always keep your `.env` file secure and never commit it to git
+- Server requires valid SharePoint credentials to start properly
+- Graph API provides better error messages and debugging information than Office365 REST API (Legacy)
+
 ## Prerequisites
 
 - Python 3.10 or higher
@@ -104,7 +112,7 @@ npx @modelcontextprotocol/inspector -- python -m mcp_sharepoint.server
 
 Then open browser to `http://localhost:6274` (or the URL shown in terminal).
 
-### Test Authentication Directly
+### Test Authentication Directly (Test Office365 REST API (Legacy))
 Create `test_auth.py`:
 ```python
 from office365.sharepoint.client_context import ClientContext
@@ -129,6 +137,8 @@ python test_auth.py
 ```
 
 ## 6. Troubleshooting
+
+The test_auth.py threw an error: "Authentication failed: (None, None, '401 Client Error: Unauthorized for url: https://wisersolutionsinc.sharepoint.com/sites/M365CLI/_api/Web')". 
 
 ### Common Issues
 
@@ -165,15 +175,68 @@ wiser-mcp-sharepoint/
 └── test_auth.py          # Authentication test script
 ```
 
-## 7. Next Steps
+## 7. Testing Graph API Authentication
 
-Once authentication is working:
-1. Test SharePoint tools in MCP Inspector
-2. Integrate with Claude Desktop or other MCP clients
-3. Explore available SharePoint operations
+This MCP server supports two authentication approaches:
 
-## Notes
+### 1. Office365 REST API (Legacy)
+The original implementation using `Office365-REST-Python-Client` library.
 
-- The `.egg-info` folder is created during `pip install -e .` and is normal
-- Always keep your `.env` file secure and never commit it to git
-- Server requires valid SharePoint credentials to start properly
+### 2. Microsoft Graph API (Recommended) 🆕
+A modern, more reliable approach using Microsoft Graph API with MSAL authentication.
+
+**Why Graph API is better:**
+- ✅ Better compatibility with Azure AD app registrations
+- ✅ More reliable authentication (no 401 errors)
+- ✅ Modern Microsoft authentication library (MSAL)
+- ✅ Consistent API endpoints and error handling
+- ✅ Better documentation and support
+
+### How Microsoft Graph API Works
+
+#### Components Required
+1. **MSAL (Microsoft Authentication Library)** - Handles OAuth2 authentication
+2. **Azure AD App Registration** - Your app's identity in Microsoft's system
+3. **Access Tokens** - Temporary credentials for API calls
+4. **Graph API Endpoints** - RESTful URLs for SharePoint operations
+
+### Authentication Flow
+
+**Step-by-step:**
+1. **App Registration**: Your app is registered in Azure AD with specific permissions
+2. **Client Credentials Flow**: App uses Client ID + Secret to prove its identity
+3. **Token Acquisition**: MSAL exchanges credentials for an access token
+4. **API Calls**: Token is used in HTTP headers to authenticate SharePoint requests
+
+### Request Flow Example
+```python
+# 1. Get access token
+app = ConfidentialClientApplication(client_id, authority, client_credential=secret)
+result = app.acquire_token_for_client(scopes=["[https://graph.microsoft.com/.default](https://graph.microsoft.com/.default)"])
+access_token = result["access_token"]
+
+# 2. Make API call
+headers = {"Authorization": f"Bearer {access_token}"}
+response = requests.get("[https://graph.microsoft.com/v1.0/sites/{site-id}/drives](https://graph.microsoft.com/v1.0/sites/{site-id}/drives)", headers=headers)
+
+# 3. Process response
+data = response.json()
+```
+
+### Test Graph API Authentication
+Create `test_graph_auth.py`.
+
+### Test Comprehensive SharePoint Operations
+Create `test_graph_operations.py`.
+
+### Create requirements_graph.txt for Graph API
+Create `requirements_graph.txt`.
+
+## 8. Migration to Graph API
+
+If you're currently using Office365 REST API and want to migrate to Graph API:
+
+1. **Test Graph API first**: Run [test_graph_auth.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/test_graph_auth.py:0:0-0:0) to ensure it works
+2. **Update dependencies**: Ensure `msal` and `requests` are installed  
+3. **Modify server code**: Update [common.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/common.py:0:0-0:0), [resources.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/resources.py:0:0-0:0), and [tools.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/tools.py:0:0-0:0) to use Graph API
+4. **Test thoroughly**: Use [test_graph_operations.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/test_graph_operations.py:0:0-0:0) to verify all operations work
