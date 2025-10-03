@@ -215,7 +215,7 @@ What You're Using: Client Credentials Flow
 3. **Token Acquisition**: MSAL exchanges credentials for an access token
 4. **API Calls**: Token is used in HTTP headers to authenticate SharePoint requests
 
-### In Simple Words,
+#### In Simple Words,
 MSAL is essentially the "authentication middleman" that converts your app credentials into a usable access token for Microsoft Graph API calls!
 
 **Step 1: MSAL Gets Access Token**
@@ -286,14 +286,36 @@ SECRET     OAuth2    App Creds     Token        Token      Data
 4. Permissions: Token contains exactly what permissions your app has
 
 
-### Test Graph API Authentication
+#### Test Graph API Authentication
 Create `test_graph_auth.py`.
 
-### Test Comprehensive SharePoint Operations
+#### Test Comprehensive SharePoint Operations
 Create `test_graph_operations.py`.
 
-### Create requirements_graph.txt for Graph API
+#### Create requirements_graph.txt for Graph API
 Create `requirements_graph.txt`.
+
+
+### Network Flow
+Your MCP Server → Internet → Microsoft Graph API → SharePoint Online
+      ↓                                ↓               ↓
+   requests.get()              Validates token    Gets site info
+      ↓                                ↓               ↓
+   HTTP Request                Returns JSON       Site data
+
+What Happens:
+Your app → Graph API server: HTTP GET request
+Graph API validates your access token
+Graph API → SharePoint backend: Gets site information
+SharePoint → Graph API: Returns site data
+Graph API → Your app: HTTP response with JSON data
+
+```python
+graph_url = f"https://graph.microsoft.com/v1.0/sites/{tenant_name}.sharepoint.com:/sites/{site_name}"
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#            |                                |
+#            └── Graph API base URL           └── SharePoint site identifier
+```
 
 ## 8. Migration to Graph API
 

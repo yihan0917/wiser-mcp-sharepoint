@@ -60,11 +60,13 @@ def test_sharepoint_access(access_token):
         # Graph API endpoint for SharePoint site
         graph_url = f"https://graph.microsoft.com/v1.0/sites/{tenant_name}.sharepoint.com:/sites/{site_name}"
         
+        # The Accept header tells the server what format you want the response in. Without Accept header: Server uses default format (usually JSON for Graph API)
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Accept": "application/json"
         }
         
+        # Making one HTTP GET request to the Graph API endpoint for SharePoint site
         response = requests.get(graph_url, headers=headers)
         
         if response.status_code == 200:
