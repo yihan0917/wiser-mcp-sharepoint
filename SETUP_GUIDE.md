@@ -199,29 +199,92 @@ A modern, more reliable approach using Microsoft Graph API with MSAL authenticat
 2. **Azure AD App Registration** - Your app's identity in Microsoft's system
 3. **Access Tokens** - Temporary credentials for API calls
 4. **Graph API Endpoints** - RESTful URLs for SharePoint operations
+Reference: 
+- https://github.com/AzureAD/microsoft-authentication-library-for-python/blob/dev/sample/confidential_client_sample.py
+- https://msal-python.readthedocs.io/en/latest/#msal.ConfidentialClientApplication.acquire_token_for_client
+
+
 
 ### Authentication Flow
+You are acquiring a token for the confidential client (Azure App is indeed a daemon app), not for a signed-in user.
+What You're Using: Client Credentials Flow
 
 **Step-by-step:**
-1. **App Registration**: Your app is registered in Azure AD with specific permissions
+1. **App Registration**: Your app is registered in Azure AD (now called Microsoft Entra ID) with specific permissions
 2. **Client Credentials Flow**: App uses Client ID + Secret to prove its identity
 3. **Token Acquisition**: MSAL exchanges credentials for an access token
 4. **API Calls**: Token is used in HTTP headers to authenticate SharePoint requests
 
-### Request Flow Example
+### In Simple Words,
+MSAL is essentially the "authentication middleman" that converts your app credentials into a usable access token for Microsoft Graph API calls!
+
+**Step 1: MSAL Gets Access Token**
 ```python
-# 1. Get access token
-app = ConfidentialClientApplication(client_id, authority, client_credential=secret)
-result = app.acquire_token_for_client(scopes=["[https://graph.microsoft.com/.default](https://graph.microsoft.com/.default)"])
+# Get access token
+app = ConfidentialClientApplication(CLIENT_ID, authority=AUTHORITY, client_credential=CLIENT_SECRET)
+result = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
 access_token = result["access_token"]
+```
+What MSAL does:
 
-# 2. Make API call
+1. Takes your Azure App credentials (CLIENT_ID + CLIENT_SECRET)
+2. Contacts Microsoft's authentication servers (login.microsoftonline.com)
+3. Says: "This app wants to access Microsoft Graph API"
+4. Microsoft validates your app and returns an access token
+
+The **authority** is the URL of the Microsoft identity server that will authenticate your app.
+```python
+AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
+```
+What it does:
+Authentication Server: This is where MSAL sends your credentials to get tokens
+Tenant-Specific: Each organization has its own tenant ID, so the authority points to your specific organization's authentication endpoint
+Trust Boundary: It defines which Microsoft identity provider to trust
+
+**Scopes** define what permissions your app is requesting - what it wants to access and what it wants to do.
+```python
+SCOPES = ["https://graph.microsoft.com/.default"]
+```
+What .default means:
+When you use https://graph.microsoft.com/.default, it requests ALL the permissions configured for your app in Azure AD, not just Graph API permissions. So The access token you get contains permissions for all the APIs your app is registered for.
+```python
+# This works because your token has Graph permissions
+response = requests.get("https://graph.microsoft.com/v1.0/sites/{site-id}", headers=headers)
+
+# This would also work because your token has SharePoint permissions
+response = requests.get("https://yourtenant.sharepoint.com/_api/web", headers=headers)
+```
+
+**Step 2: Use Access Token to Call Graph API**
+```python
+# Make API call
 headers = {"Authorization": f"Bearer {access_token}"}
-response = requests.get("[https://graph.microsoft.com/v1.0/sites/{site-id}/drives](https://graph.microsoft.com/v1.0/sites/{site-id}/drives)", headers=headers)
+response = requests.get("https://graph.microsoft.com/v1.0/sites/{site-id}", headers=headers)
 
-# 3. Process response
+# Process response
 data = response.json()
 ```
+What happens:
+
+1. Takes your access token
+2. Contacts Microsoft Graph API servers
+3. Sends your request with the access token in the header
+4. Returns the response from Microsoft Graph API
+
+An **endpoint** is a specific URL that represents a particular function or resource you can access via an API.
+
+**The Complete Authentication Flow:**
+Your App → MSAL → Microsoft Auth → Access Token → Graph API → SharePoint
+   ↓         ↓         ↓              ↓            ↓           ↓
+CLIENT_ID  Handles   Validates     Returns      Accepts    Returns
+SECRET     OAuth2    App Creds     Token        Token      Data
+
+**Why This Two-Step Process?**
+1. Security: Your app credentials never go directly to SharePoint
+2. Standardization: Same token works for all Microsoft services (Graph, SharePoint, Teams, etc.)
+3. Token Management: MSAL handles token expiration, refresh, caching automatically
+4. Permissions: Token contains exactly what permissions your app has
+
 
 ### Test Graph API Authentication
 Create `test_graph_auth.py`.

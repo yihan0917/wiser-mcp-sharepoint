@@ -26,8 +26,10 @@ def get_access_token():
         )
         
         # Acquire token for client credentials flow
+        # Step 1: Try to get cached token (fast)
         result = app.acquire_token_silent(SCOPES, account=None)
         
+        # Step 2: If no cached token, acquire new token (slower)
         if not result:
             result = app.acquire_token_for_client(scopes=SCOPES)
         
