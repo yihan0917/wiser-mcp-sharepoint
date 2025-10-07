@@ -122,3 +122,34 @@ def get_document_content(folder_name: str, file_name: str) -> dict:
     except Exception as e:
         logger.error(f"Failed to get document content for {file_path}: {e}")
         return {"name": file_name, "error": f"Failed to get document content: {str(e)}"}
+
+def download_document(folder_name: str, file_name: str, local_path: str) -> Dict[str, Any]:
+    """Download a document from SharePoint to local filesystem using Graph API"""
+    file_path = f"{folder_name}/{file_name}".strip('/')
+    logger.info(f"Downloading file: {file_path} to {local_path}")
+    
+    try:
+        # Get file content using existing function
+        content_bytes = _get_file_content_by_path(file_path)
+        
+        if not content_bytes:
+            return {"success": False, "message": "Failed to download file content"}
+        
+        # Ensure local directory exists
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        
+        # Write file to local filesystem
+        with open(local_path, 'wb') as f:
+            f.write(content_bytes)
+        
+        logger.info(f"Successfully downloaded {file_name} to {local_path}")
+        return {
+            "success": True,
+            "message": f"File {file_name} downloaded successfully",
+            "local_path": local_path,
+            "size": len(content_bytes)
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to download document {file_path}: {e}")
+        return {"success": False, "message": f"Failed to download document: {str(e)}"}

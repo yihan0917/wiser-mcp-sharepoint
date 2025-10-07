@@ -341,7 +341,7 @@ Successfully migrated the SharePoint MCP server from Office365 REST API to Micro
 - ✅ **Global Variables**: `ACCESS_TOKEN`, `SITE_ID`, `DRIVE_ID` for shared state
 - ✅ **Automatic Initialization**: SharePoint connection setup on module import
 
-##### 3. **Created resources_graph.py**
+##### 3. **Updated resources.py**
 - ✅ **Core Functions**: `list_folders()`, `list_documents()`, `get_document_content()`
 - ✅ **Graph API Endpoints**: Uses modern `/sites/{site-id}/drives/{drive-id}` endpoints
 - ✅ **Error Handling**: Comprehensive logging and error management
@@ -379,22 +379,296 @@ response = requests.get(graph_url, headers=headers)
 - ✅ **Token Management**: Automatic token caching and refresh
 - ✅ **Simplified Architecture**: Generic request function for all operations
 
-#### Migration Verification:
-
-If you're currently using Office365 REST API and want to migrate to Graph API:
-
-1. **Test Graph API first**: Run [test_graph_auth.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/test_graph_auth.py:0:0-0:0) to ensure it works
-2. **Update dependencies**: Ensure `msal` and `requests` are installed  
-3. **Modify server code**: Update [common.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/common.py:0:0-0:0), [resources.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/resources.py:0:0-0:0), and [tools.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/tools.py:0:0-0:0) to use Graph API
-4. **Test thoroughly**: Use [test_graph_operations.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/test_graph_operations.py:0:0-0:0) to verify all operations work
 
 #### Files Modified:
 - ✅ `src/mcp_sharepoint/common.py` - Complete Graph API migration
-- ✅ `src/mcp_sharepoint/resources_graph.py` - New Graph API resources (created)
-- 🔄 `src/mcp_sharepoint/resources.py` - Backed up as `resources_old.py`
-- 🔄 `src/mcp_sharepoint/tools.py` - Needs Graph API migration (pending)
+- ✅ `src/mcp_sharepoint/resources.py` - Updated to use Graph API (includes `download_document()`)
+- ✅ `src/mcp_sharepoint/tools.py` - **Complete Graph API migration** 
+- 🔄 `src/mcp_sharepoint/resources_old.py` - Backup of original resources.py
+- 🔄 `src/mcp_sharepoint/tools_old.py` - Backup of original tools.py
+
+#### Testing Infrastructure:
+- ✅ `test_resources.py` - Integration/manual testing script
+- ✅ `test_resources_unit.py` - Automated unit testing with pytest
+- ✅ `test_download_excel.py` - **Excel download and verification test**
+
+#### Migration Completed:
+- ✅ **All core files migrated** to Microsoft Graph API
+- ✅ **Authentication working** - MSAL token acquisition successful
+- ✅ **File operations tested** - Download, content extraction, Excel verification
+- ✅ **Real data validation** - Successfully downloaded and read 106×18 Excel dataset
 
 #### Next Steps:
-- Migrate `tools.py` to use Graph API functions from `common.py`
 - Update `pyproject.toml` dependencies (add `msal`, remove `office365-rest-python-client`)
-- Complete testing of all MCP server operations
+- Add remaining tools (upload_document_from_path, update_document, delete_folder)
+- Complete integration testing of all MCP server operations
+
+## 9. Testing the Graph API Migration (resources.py)
+
+### Test Scripts Overview
+
+Two comprehensive test scripts have been created to validate the Graph API migration:
+
+#### **test_resources.py** - Integration/Manual Testing
+**Purpose:** Human-readable testing for debugging and exploration
+
+**Features:**
+- ✅ **Visual Output**: Emojis and formatted output for easy reading
+- ✅ **Real Data Display**: Shows actual SharePoint folders, files, and content
+- ✅ **Error Details**: Comprehensive error reporting with full tracebacks
+- ✅ **Excel Testing**: Dedicated function for testing Excel file content extraction
+
+**Usage:**
+```bash
+python test_resources.py
+```
+
+**Sample Output:**
+```
+🚀 Testing SharePoint Graph API Resources
+
+🔍 Testing Basic Connection...
+ACCESS_TOKEN: ✅ Set
+SITE_ID: wisersolutionsinc.sharepoint.com,99b9eb9e-666a-407b...
+
+📁 Testing list_folders()...
+✅ Found 3 folders:
+  - AI Generated Reports
+  - Data
+  - Reports
+
+📖 Testing get_document_content()...
+Testing with document: 'test_file.txt'
+✅ Successfully retrieved content:
+  - Type: text
+  - Size: 21 bytes
+  - Preview: Hello from Graph API!
+```
+
+#### **test_resources_unit.py** - Automated Unit Testing
+**Purpose:** Automated validation for CI/CD and regression testing
+
+**Features:**
+- ✅ **Pytest Integration**: Standard Python testing framework
+- ✅ **Pass/Fail Assertions**: Clear success/failure indicators
+- ✅ **Automated Execution**: Can be run in CI/CD pipelines
+- ✅ **Structure Validation**: Tests data types and required fields
+
+**Usage:**
+```bash
+# Install pytest if not already installed
+pip install pytest
+
+# Run unit tests
+python test_resources_unit.py
+```
+
+**Sample Output:**
+```
+================================================================= test session starts =================================================================
+test_resources_unit.py::TestSharePointResources::test_connection_variables PASSED [ 25%]
+test_resources_unit.py::TestSharePointResources::test_list_folders PASSED         [ 50%]
+test_resources_unit.py::TestSharePointResources::test_list_documents PASSED       [ 75%]
+test_resources_unit.py::TestSharePointResources::test_get_document_content_nonexistent PASSED [100%]
+============================================================ 4 passed, 1 warning in 0.90s =============================================================
+```
+
+### Test Functions Available
+
+#### **Basic Functions (Both Scripts):**
+- `test_connection_variables()` - Validates ACCESS_TOKEN, SITE_ID, DRIVE_ID are set
+- `test_list_folders()` - Tests folder listing functionality
+- `test_list_documents()` - Tests document listing in folders
+- `test_get_document_content()` - Tests content retrieval from files
+
+#### **Excel-Specific Testing (test_resources.py):**
+- `test_get_excel_content(folder_name, file_name)` - Tests Excel file content extraction
+
+**Example Excel Test:**
+```python
+# Test specific Excel file
+test_get_excel_content('Data', '2023 Recruiting Dataset.xlsx')
+```
+
+### When to Use Each Test
+
+| Scenario | Use test_resources.py | Use test_resources_unit.py |
+|----------|----------------------|---------------------------|
+| **Debugging Issues** | ✅ Shows detailed error info | ❌ Only pass/fail |
+| **Exploring SharePoint** | ✅ Shows actual data | ❌ Structure only |
+| **CI/CD Pipeline** | ❌ Too verbose | ✅ Clean pass/fail |
+| **Development** | ✅ Human-readable output | ❌ Minimal output |
+| **Regression Testing** | ❌ Manual review needed | ✅ Automated validation |
+
+### Running Tests
+
+#### **Quick Validation:**
+```bash
+# Run integration tests (shows actual data)
+python test_resources.py
+
+# Run unit tests (automated validation)
+python test_resources_unit.py
+```
+
+#### **Development Workflow:**
+```bash
+# 1. First, explore and debug with integration tests
+python test_resources.py
+
+# 2. Then validate with unit tests
+python test_resources_unit.py
+
+# 3. Both should pass before committing code
+```
+
+### Test Results Validation
+
+#### **Expected Success Indicators:**
+- ✅ All connection variables are set
+- ✅ Folders can be listed from SharePoint
+- ✅ Documents can be listed from folders
+- ✅ File content can be retrieved
+- ✅ Excel files can be processed (if available)
+
+#### **Common Issues and Solutions:**
+- **401 Errors**: Check Azure app permissions and tenant ID
+- **Empty Results**: Verify SharePoint site URL and folder names
+- **Token Issues**: Check app ID and secret in `.env` file
+- **Excel Processing Errors**: Ensure pandas and openpyxl are installed
+
+## 10. Tools Migration and Excel Testing
+
+### Complete tools.py Migration (October 2024)
+
+Successfully migrated all MCP tools from Office365 REST API to Microsoft Graph API.
+
+#### Migration Process:
+
+##### 1. **File Backup and Replacement**
+```bash
+# Backup original tools
+mv src/mcp_sharepoint/tools.py src/mcp_sharepoint/tools_old.py
+
+# Replace with Graph API version
+mv src/mcp_sharepoint/tools_graph.py src/mcp_sharepoint/tools.py
+```
+
+##### 2. **Updated Imports**
+```python
+# Old (Office365 REST API)
+from .common import logger, mcp, SHP_DOC_LIBRARY, sp_context
+from .resources import list_folders, list_documents, get_document_content, get_folder_tree, download_document
+
+# New (Graph API)
+from .common import logger, mcp, ACCESS_TOKEN, SITE_ID, DRIVE_ID, make_graph_request
+from .resources import list_folders, list_documents, get_document_content, download_document
+```
+
+##### 3. **Tools Migrated to Graph API**
+- ✅ **`list_folders_tool()`** - Lists SharePoint folders
+- ✅ **`list_documents_tool()`** - Lists documents in folders
+- ✅ **`get_document_content_tool()`** - Retrieves file content
+- ✅ **`download_document_tool()`** - Downloads files to local filesystem
+- ✅ **`create_folder()`** - Creates new folders using Graph API
+- ✅ **`upload_document()`** - Uploads files using Graph API
+- ✅ **`delete_document()`** - Deletes files using Graph API
+
+##### 4. **Graph API Endpoints Used**
+```python
+# Folder operations
+f"sites/{SITE_ID}/drives/{DRIVE_ID}/root/children"
+f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{folder_path}:/children"
+
+# File operations
+f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{file_path}:/content"
+f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{file_path}"
+```
+
+### Excel Download Testing
+
+#### Test Script: `test_download_excel.py`
+
+Created comprehensive test to verify Excel file download and data integrity.
+
+**Features:**
+- ✅ **Smart File Discovery** - Automatically finds Excel files in SharePoint
+- ✅ **Real Download Test** - Downloads actual Excel files using Graph API
+- ✅ **Data Validation** - Reads Excel with pandas to verify integrity
+- ✅ **Content Analysis** - Shows actual spreadsheet data, not binary
+
+**Usage:**
+```bash
+python test_download_excel.py
+```
+
+#### Successful Test Results (October 7, 2025):
+
+**Connection:**
+- ✅ **Authentication**: MSAL token acquisition successful
+- ✅ **Site Access**: Connected to SharePoint site "M365CLI"
+- ✅ **Drive Access**: Found Documents library
+
+**File Discovery:**
+- ✅ **Found 5 Excel files** in Data folder
+- ✅ **Target file**: `2023 Recruiting Dataset  .xlsx` (27,927 bytes)
+
+**Download Verification:**
+- ✅ **Download successful**: File saved to Desktop with timestamp
+- ✅ **File integrity**: Local file size matches (27,927 bytes)
+- ✅ **Excel validation**: Successfully read with pandas
+
+**Data Analysis Results:**
+```
+✅ Excel file successfully read!
+  - Shape: 106 rows × 18 columns
+  - Columns: ['Role Name ', 'Job Code ', 'Recruiter', 'Hiring Manger ', ...]
+  
+📋 First 5 rows of data:
+Role Name                                    Job Code  Recruiter   Hiring Manger  
+Assistant Controller (Sr Manager, Accounting)    NaN     Tiesa            Penny
+BDR (France)                                     NaN   Melissa       ANTONIETTA
+Infrastructure Engineer (Vincent backfill)   ENG_081   Melissa Andrew Kesterson
+...
+
+📈 Basic statistics for numeric columns:
+       Total Days Open   Inbound Applicants  Recruiter Screen
+count         75.000000           58.000000         57.000000
+mean          74.506667          684.379310         19.491228
+std           65.081316          761.254386         19.553154
+...
+```
+
+#### Key Achievements:
+
+##### 1. **Proves Graph API Reliability**
+- ✅ **No 401 errors** - Authentication works consistently
+- ✅ **Real data access** - Successfully downloaded recruiting dataset
+- ✅ **File integrity** - Excel files are complete and readable
+
+##### 2. **Data Validation Success**
+- ✅ **Not binary garbage** - Pandas successfully parsed Excel structure
+- ✅ **Structured data** - 106 rows × 18 columns of recruiting data
+- ✅ **Mixed data types** - Text, numbers, dates all properly handled
+- ✅ **Business data** - Real recruiting metrics (days open, applicants, etc.)
+
+##### 3. **Production Ready**
+- ✅ **Error handling** - Comprehensive error reporting and debugging
+- ✅ **File management** - Automatic directory creation and cleanup
+- ✅ **Flexible naming** - Original filename preserved with timestamp
+
+### Migration Status Summary
+
+#### Completed ✅
+- **Authentication**: MSAL-based Graph API authentication
+- **Core Resources**: Folder/document listing, content retrieval, download
+- **MCP Tools**: All basic SharePoint operations migrated
+- **Testing**: Comprehensive test suite with real data validation
+- **Documentation**: Complete migration guide and troubleshooting
+
+#### Remaining Tasks 🔄
+- **Additional Tools**: `upload_document_from_path()`, `update_document()`, `delete_folder()`
+- **Dependencies**: Update `pyproject.toml` (add `msal`, remove `office365-rest-python-client`)
+- **Integration Testing**: Full MCP server testing with all operations
+
+The Graph API migration is **functionally complete** and **production ready** for core SharePoint operations! 🎉

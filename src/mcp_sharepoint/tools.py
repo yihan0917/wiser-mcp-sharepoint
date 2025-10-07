@@ -1,15 +1,13 @@
+"""
+SharePoint MCP tools using Microsoft Graph API
+"""
 import base64, os
 from functools import wraps
 from typing import Optional, Dict, Any
-from .common import logger, mcp, SHP_DOC_LIBRARY, sp_context
-from .resources import list_folders, list_documents, get_document_content, get_folder_tree, download_document
+from .common import logger, mcp, ACCESS_TOKEN, SITE_ID, DRIVE_ID, make_graph_request
+from .resources import list_folders, list_documents, get_document_content, download_document
 
-# Helper functions to reduce code duplication
-def _get_path(folder: str = "", file: Optional[str] = None) -> str:
-    """Construct SharePoint path from components"""
-    path = f"{SHP_DOC_LIBRARY}/{folder}".rstrip('/')
-    return f"{path}/{file}" if file else path
-
+# Helper functions
 def _handle_sp_operation(func):
     """Decorator for SharePoint operations with error handling"""
     @wraps(func)
@@ -21,15 +19,32 @@ def _handle_sp_operation(func):
             return {"success": False, "message": f"Operation failed: {str(e)}"}
     return wrapper
 
-def _file_success_response(file_obj, message: str) -> Dict[str, Any]:
+def _file_success_response(file_info: Dict[str, Any], message: str) -> Dict[str, Any]:
     """Standard success response for file operations"""
     return {
         "success": True,
         "message": message,
-        "file": {"name": file_obj.name, "url": file_obj.serverRelativeUrl}
+        "file": {
+            "name": file_info.get('name'),
+            "id": file_info.get('id'),
+            "url": file_info.get('webUrl'),
+            "size": file_info.get('size', 0)
+        }
     }
 
-# Tool implementations
+def _folder_success_response(folder_info: Dict[str, Any], message: str) -> Dict[str, Any]:
+    """Standard success response for folder operations"""
+    return {
+        "success": True,
+        "message": message,
+        "folder": {
+            "name": folder_info.get('name'),
+            "id": folder_info.get('id'),
+            "url": folder_info.get('webUrl')
+        }
+    }
+
+# Basic tool implementations
 @mcp.tool(name="List_SharePoint_Folders", description="List folders in the specified SharePoint directory or root if not specified")
 async def list_folders_tool(parent_folder: Optional[str] = None):
     """List folders in the specified SharePoint directory or root if not specified"""
@@ -40,141 +55,107 @@ async def list_documents_tool(folder_name: str):
     """List all documents in a specified SharePoint folder"""
     return list_documents(folder_name)
 
-@mcp.tool(name="Get_SharePoint_Tree", description="Get a recursive tree view of a SharePoint folder")
-async def get_sharepoint_tree_tool(parent_folder: Optional[str] = None):
-    """Get a recursive tree view of a SharePoint folder."""
-    return get_folder_tree(parent_folder)
-
 @mcp.tool(name="Get_Document_Content", description="Get content of a document in SharePoint")
 async def get_document_content_tool(folder_name: str, file_name: str):
     """Get content of a document in SharePoint"""
     return get_document_content(folder_name, file_name)
-
-@mcp.tool(name="Create_Folder", description="Create a new folder in the specified directory or root if not specified")
-@_handle_sp_operation
-async def create_folder(folder_name: str, parent_folder: Optional[str] = None):
-    """Create a new folder in the specified directory or root if not specified"""
-    parent_path = _get_path(parent_folder or "")
-    logger.info(f"Creating folder '{folder_name}' in {parent_folder or 'root directory'}")
-    
-    # Check for existing folder
-    if any(f["name"] == folder_name for f in list_folders(parent_folder)):
-        return {"success": False, "message": f"Folder {folder_name} already exists"}
-    
-    # Create folder
-    parent = sp_context.web.get_folder_by_server_relative_url(parent_path)
-    new_folder = parent.folders.add(folder_name)
-    sp_context.execute_query()
-    
-    return _file_success_response(new_folder, f"Folder {folder_name} created successfully")
-
-@mcp.tool(name="Upload_Document", description="Upload a new file to a SharePoint directory")
-@_handle_sp_operation
-async def upload_document(folder_name: str, file_name: str, content: str, is_base64: bool = False):
-    """Upload a new file to a directory"""
-    logger.info(f"Uploading document {file_name} to folder {folder_name}")
-    
-    # Convert content and upload
-    file_content = base64.b64decode(content) if is_base64 else content.encode('utf-8')
-    folder = sp_context.web.get_folder_by_server_relative_url(_get_path(folder_name))
-    uploaded_file = folder.upload_file(file_name, file_content)
-    sp_context.execute_query()
-    
-    return _file_success_response(uploaded_file, f"File {file_name} uploaded successfully")
-
-@mcp.tool(name="Upload_Document_From_Path", description="Upload a file directly from a file path to SharePoint")
-@_handle_sp_operation
-async def upload_document_from_path(folder_name: str, file_path: str, new_file_name: Optional[str] = None):
-    """Upload a file directly from a path without needing to convert to base64 first"""
-    logger.info(f"Uploading document from path {file_path} to folder {folder_name}")
-    
-    try:
-        with open(file_path, "rb") as file:
-            file_content = file.read()
-        
-        if not new_file_name:
-            new_file_name = os.path.basename(file_path)
-            
-        folder = sp_context.web.get_folder_by_server_relative_url(_get_path(folder_name))
-        uploaded_file = folder.upload_file(new_file_name, file_content)
-        sp_context.execute_query()
-        
-        return _file_success_response(uploaded_file, f"File {new_file_name} uploaded successfully")
-    except Exception as e:
-        logger.error(f"Error uploading file from path: {str(e)}")
-        raise
-
-@mcp.tool(name="Update_Document", description="Update an existing document in a SharePoint directory")
-@_handle_sp_operation
-async def update_document(folder_name: str, file_name: str, content: str, is_base64: bool = False):
-    """Update an existing document in a SharePoint directory"""
-    logger.info(f"Updating document {file_name} in folder {folder_name}")
-    
-    # Check if file exists
-    file_path = _get_path(folder_name, file_name)
-    file = sp_context.web.get_file_by_server_relative_url(file_path)
-    sp_context.load(file, ["Exists", "Name", "ServerRelativeUrl"])
-    sp_context.execute_query()
-    
-    if not file.exists:
-        return {"success": False, "message": f"File {file_name} does not exist in folder {folder_name}"}
-    
-    # Update file using upload method
-    file_content = base64.b64decode(content) if is_base64 else content.encode('utf-8')
-    folder = sp_context.web.get_folder_by_server_relative_url(_get_path(folder_name))
-    updated_file = folder.upload_file(file_name, file_content)
-    sp_context.execute_query()
-    
-    return _file_success_response(updated_file, f"File {file_name} updated successfully")
-
-@mcp.tool(name="Delete_Document", description="Delete a document from a SharePoint directory")
-@_handle_sp_operation
-async def delete_document(folder_name: str, file_name: str):
-    """Delete a document from a directory"""
-    logger.info(f"Deleting document {file_name} from folder {folder_name}")
-    
-    # Check if file exists and delete
-    file = sp_context.web.get_file_by_server_relative_url(_get_path(folder_name, file_name))
-    sp_context.load(file, ["Exists"])
-    sp_context.execute_query()
-    
-    if not file.exists:
-        return {"success": False, "message": f"File {file_name} does not exist in folder {folder_name}"}
-    
-    file.delete_object()
-    sp_context.execute_query()
-    return {"success": True, "message": f"File {file_name} deleted successfully"}
-
-@mcp.tool(name="Delete_Folder", description="Delete an empty folder from SharePoint")
-@_handle_sp_operation
-async def delete_folder(folder_path: str):
-    """Delete an empty folder from SharePoint"""
-    logger.info(f"Deleting folder: {folder_path}")
-    
-    # Get folder and check if it exists and is empty
-    full_path = _get_path(folder_path)
-    folder = sp_context.web.get_folder_by_server_relative_url(full_path)
-    sp_context.load(folder)
-    sp_context.load(folder.files)
-    sp_context.load(folder.folders)
-    sp_context.execute_query()
-    
-    if not hasattr(folder, 'exists') or not folder.exists:
-        return {"success": False, "message": f"Folder '{folder_path}' does not exist"}
-    
-    if len(folder.files) > 0:
-        return {"success": False, "message": f"Folder contains {len(folder.files)} files"}
-    
-    if len(folder.folders) > 0:
-        return {"success": False, "message": f"Folder contains {len(folder.folders)} subfolders"}
-    
-    # Delete the empty folder
-    folder.delete_object()
-    sp_context.execute_query()
-    return {"success": True, "message": f"Folder '{folder_path}' deleted successfully"}
 
 @mcp.tool(name="Download_Document", description="Download a document from SharePoint to local filesystem")
 @_handle_sp_operation
 async def download_document_tool(folder_name: str, file_name: str, local_path: str):
     """Download a document from SharePoint to local filesystem with fallback support"""
     return download_document(folder_name, file_name, local_path)
+
+# Graph API specific tools
+@mcp.tool(name="Create_Folder", description="Create a new folder in the specified directory or root if not specified")
+@_handle_sp_operation
+async def create_folder(folder_name: str, parent_folder: Optional[str] = None):
+    """Create a new folder using Graph API"""
+    logger.info(f"Creating folder '{folder_name}' in {parent_folder or 'root directory'}")
+    
+    # Check for existing folder
+    existing_folders = list_folders(parent_folder)
+    if any(f["name"] == folder_name for f in existing_folders):
+        return {"success": False, "message": f"Folder {folder_name} already exists"}
+    
+    try:
+        if not parent_folder or parent_folder == "":
+            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root/children"
+        else:
+            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{parent_folder}:/children"
+        
+        folder_data = {
+            "name": folder_name,
+            "folder": {},
+            "@microsoft.graph.conflictBehavior": "rename"
+        }
+        
+        response = make_graph_request("POST", endpoint, folder_data)
+        
+        if response and response.status_code == 201:
+            folder_info = response.json()
+            return _folder_success_response(folder_info, f"Folder {folder_name} created successfully")
+        else:
+            return {"success": False, "message": f"Failed to create folder: {response.status_code if response else 'No response'}"}
+            
+    except Exception as e:
+        return {"success": False, "message": f"Error creating folder: {str(e)}"}
+
+@mcp.tool(name="Upload_Document", description="Upload a new file to a SharePoint directory")
+@_handle_sp_operation
+async def upload_document(folder_name: str, file_name: str, content: str, is_base64: bool = False):
+    """Upload a new file using Graph API"""
+    logger.info(f"Uploading document {file_name} to folder {folder_name}")
+    
+    try:
+        # Convert content
+        file_content = base64.b64decode(content) if is_base64 else content.encode('utf-8')
+        
+        # Build endpoint
+        if not folder_name or folder_name == "":
+            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{file_name}:/content"
+        else:
+            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{folder_name}/{file_name}:/content"
+        
+        # Determine content type
+        content_type = "text/plain" if file_name.lower().endswith('.txt') else "application/octet-stream"
+        
+        response = make_graph_request("PUT", endpoint, file_content, content_type)
+        
+        if response and response.status_code in [200, 201]:
+            file_info = response.json()
+            return _file_success_response(file_info, f"File {file_name} uploaded successfully")
+        else:
+            return {"success": False, "message": f"Failed to upload file: {response.status_code if response else 'No response'}"}
+            
+    except Exception as e:
+        return {"success": False, "message": f"Error uploading file: {str(e)}"}
+
+@mcp.tool(name="Delete_Document", description="Delete a document from a SharePoint directory")
+@_handle_sp_operation
+async def delete_document(folder_name: str, file_name: str):
+    """Delete a document using Graph API"""
+    logger.info(f"Deleting document {file_name} from folder {folder_name}")
+    
+    try:
+        # Build endpoint
+        if not folder_name or folder_name == "":
+            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{file_name}"
+        else:
+            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{folder_name}/{file_name}"
+        
+        # Check if file exists
+        check_response = make_graph_request("GET", endpoint)
+        if not check_response or check_response.status_code != 200:
+            return {"success": False, "message": f"File {file_name} does not exist"}
+        
+        # Delete the file
+        response = make_graph_request("DELETE", endpoint)
+        
+        if response and response.status_code == 204:
+            return {"success": True, "message": f"File {file_name} deleted successfully"}
+        else:
+            return {"success": False, "message": f"Failed to delete file: {response.status_code if response else 'No response'}"}
+            
+    except Exception as e:
+        return {"success": False, "message": f"Error deleting file: {str(e)}"}
