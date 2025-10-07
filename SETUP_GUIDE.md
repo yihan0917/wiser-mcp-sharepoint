@@ -319,9 +319,82 @@ graph_url = f"https://graph.microsoft.com/v1.0/sites/{tenant_name}.sharepoint.co
 
 ## 8. Migration to Graph API
 
+### Complete Migration Process (October 2024)
+
+Successfully migrated the SharePoint MCP server from Office365 REST API to Microsoft Graph API. The Graph API approach resolves authentication issues and provides better reliability.
+
+#### Migration Steps Completed:
+
+##### 1. **Updated common.py**
+- ✅ **Removed**: `office365` library imports (`ClientContext`, `ClientCredential`)
+- ✅ **Added**: `msal` library (`ConfidentialClientApplication`) and `requests`
+- ✅ **New Functions**:
+  - `get_access_token()` - MSAL token acquisition with caching
+  - `get_site_info()` - Get SharePoint site ID using Graph API
+  - `get_drives()` - Get document libraries (drives)
+  - `initialize_sharepoint()` - Complete initialization sequence
+  - `make_graph_request()` - Generic Graph API request function
+
+##### 2. **Enhanced Authentication**
+- ✅ **MSAL Integration**: Uses `ConfidentialClientApplication` for secure authentication
+- ✅ **Token Caching**: Automatic token caching and refresh
+- ✅ **Global Variables**: `ACCESS_TOKEN`, `SITE_ID`, `DRIVE_ID` for shared state
+- ✅ **Automatic Initialization**: SharePoint connection setup on module import
+
+##### 3. **Created resources_graph.py**
+- ✅ **Core Functions**: `list_folders()`, `list_documents()`, `get_document_content()`
+- ✅ **Graph API Endpoints**: Uses modern `/sites/{site-id}/drives/{drive-id}` endpoints
+- ✅ **Error Handling**: Comprehensive logging and error management
+
+##### 4. **Key Technical Details**
+
+**Global Variables Usage:**
+```python
+global ACCESS_TOKEN  # ← Declares intent to modify the global variable
+ACCESS_TOKEN = result["access_token"]  # ← Modifies the global ACCESS_TOKEN
+```
+
+**Module Import Flow:**
+```
+1. Python loads common.py
+2. Executes all top-level code
+3. Reaches: if not initialize_sharepoint():
+4. Calls initialize_sharepoint()
+5. Calls get_access_token() → sets global ACCESS_TOKEN
+6. Calls get_site_info() → sets global SITE_ID  
+7. Calls get_drives() → sets global DRIVE_ID
+8. Module is ready for use
+```
+
+**HTTP Request Pattern:**
+```python
+# Making one HTTP GET request to the Graph API endpoint for SharePoint site
+response = requests.get(graph_url, headers=headers)
+```
+
+##### 5. **Benefits Achieved**
+- ✅ **Reliability**: Resolves 401 authentication errors from Office365 REST API
+- ✅ **Modern API**: Uses Microsoft's recommended Graph API
+- ✅ **Better Error Handling**: Clear HTTP status codes and error messages
+- ✅ **Token Management**: Automatic token caching and refresh
+- ✅ **Simplified Architecture**: Generic request function for all operations
+
+#### Migration Verification:
+
 If you're currently using Office365 REST API and want to migrate to Graph API:
 
 1. **Test Graph API first**: Run [test_graph_auth.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/test_graph_auth.py:0:0-0:0) to ensure it works
 2. **Update dependencies**: Ensure `msal` and `requests` are installed  
 3. **Modify server code**: Update [common.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/common.py:0:0-0:0), [resources.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/resources.py:0:0-0:0), and [tools.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/tools.py:0:0-0:0) to use Graph API
 4. **Test thoroughly**: Use [test_graph_operations.py](cci:7://file:///Users/yihan/Documents/sharepoint%20mcp/wiser-mcp-sharepoint/test_graph_operations.py:0:0-0:0) to verify all operations work
+
+#### Files Modified:
+- ✅ `src/mcp_sharepoint/common.py` - Complete Graph API migration
+- ✅ `src/mcp_sharepoint/resources_graph.py` - New Graph API resources (created)
+- 🔄 `src/mcp_sharepoint/resources.py` - Backed up as `resources_old.py`
+- 🔄 `src/mcp_sharepoint/tools.py` - Needs Graph API migration (pending)
+
+#### Next Steps:
+- Migrate `tools.py` to use Graph API functions from `common.py`
+- Update `pyproject.toml` dependencies (add `msal`, remove `office365-rest-python-client`)
+- Complete testing of all MCP server operations
