@@ -758,7 +758,7 @@ logging.basicConfig(
         "/Users/yihan/Documents/sharepoint mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/server.py"
       ],
       "env": {
-        "list out all environment variables set in .env file"
+        "# env variables are set in .env file"
       }
     }
   }
