@@ -1,5 +1,5 @@
 import asyncio
-from mcp_sharepoint.common import logger, mcp
+from .common import logger, mcp
 
 async def main():
     
@@ -7,8 +7,7 @@ async def main():
     logger.info("Starting SharePoint MCP server ...")
     
     # Import tools and resources 
-    import mcp_sharepoint.resources as resources
-    import mcp_sharepoint.tools as tools
+    from . import resources, tools
     
     # Run the mcp server
     logger.info("Running MCP server...")

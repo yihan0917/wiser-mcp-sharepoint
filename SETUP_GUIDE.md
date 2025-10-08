@@ -672,3 +672,164 @@ std           65.081316          761.254386         19.553154
 - **Integration Testing**: Full MCP server testing with all operations
 
 The Graph API migration is **functionally complete** and **production ready** for core SharePoint operations! 🎉
+
+## 11. Windsurf Integration and Troubleshooting
+
+### MCP Tools Testing Script
+
+Added comprehensive test script `test_mcp_tools.py` to validate all MCP SharePoint tools:
+
+**Features:**
+- ✅ **Complete tool coverage** - Tests all 7 MCP tools (list folders, documents, content, download, create, upload, delete)
+- ✅ **End-to-end workflow** - Creates test folder, uploads file, downloads it, verifies content, cleans up
+- ✅ **Safe testing** - Uses timestamped test files, non-destructive operations
+- ✅ **Real SharePoint interaction** - Tests against actual SharePoint site
+
+**Usage:**
+```bash
+python test_mcp_tools.py
+```
+
+### Windsurf Integration Issues and Solutions
+
+#### Issue 1: Relative Import Error
+
+**Error encountered:**
+```
+Error: failed to initialize server: ImportError: attempted relative import with no known parent package
+```
+
+**Root cause:** Server.py used relative imports (`from .common import logger`) which don't work when MCP clients execute the module.
+
+**Solution:** Changed to explicit imports in `server.py`:
+```python
+# OLD (relative imports)
+from .common import logger, mcp
+from . import resources, tools
+
+# NEW (explicit imports) 
+from mcp_sharepoint.common import logger, mcp
+import mcp_sharepoint.resources as resources
+import mcp_sharepoint.tools as tools
+```
+
+**Files modified:**
+- ✅ `src/mcp_sharepoint/server_old.py` - Backup of original server
+- ✅ `src/mcp_sharepoint/server.py` - Updated with explicit imports
+
+#### Issue 2: Read-only File System Error
+
+**Error encountered:**
+```
+OSError: [Errno 30] Read-only file system: '/mcp_sharepoint.log'
+```
+
+**Root cause:** Logging configuration tried to write log file to root filesystem (`/mcp_sharepoint.log`) which is read-only in MCP server environments.
+
+**Solution:** Simplified logging configuration in `common.py`:
+```python
+# OLD (with file handler)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.FileHandler('mcp_sharepoint.log'), logging.StreamHandler()]
+)
+
+# NEW (console only)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+```
+
+**Result:** Server now uses default console logging, avoiding filesystem permission issues.
+
+### Final Windsurf Configuration
+
+**Working configuration for `settings.json`:**
+
+#### Option 1: Direct Script Execution (Recommended)
+```json
+{
+  "mcp.servers": {
+    "sharepoint-mcp": {
+      "command": "/Users/yihan/Documents/sharepoint mcp/wiser-mcp-sharepoint/venv/bin/python",
+      "args": [
+        "/Users/yihan/Documents/sharepoint mcp/wiser-mcp-sharepoint/src/mcp_sharepoint/server.py"
+      ],
+      "env": {
+        "list out all environment variables set in .env file"
+      }
+    }
+  }
+}
+```
+
+**Benefits of this approach:**
+- ✅ **No .env file dependency** - All configuration in Windsurf settings
+- ✅ **Direct script execution** - Runs server.py directly, avoiding module import issues
+- ✅ **Environment isolation** - Each MCP server has its own environment variables
+- ✅ **Explicit configuration** - All settings visible in Windsurf config
+
+#### Option 2: Module Execution (Alternative)
+```json
+{
+  "mcp.servers": {
+    "sharepoint-mcp": {
+      "command": "/Users/yihan/Documents/sharepoint mcp/wiser-mcp-sharepoint/venv/bin/python",
+      "args": ["-m", "mcp_sharepoint.server"],
+      "cwd": "/Users/yihan/Documents/sharepoint mcp/wiser-mcp-sharepoint",
+      "env": {
+        "PYTHONPATH": "/Users/yihan/Documents/sharepoint mcp/wiser-mcp-sharepoint/src"
+      }
+    }
+  }
+}
+```
+
+**Note:** This approach requires the `.env` file to be present and readable.
+
+### Key Lessons Learned
+
+#### 1. **MCP Server Import Requirements**
+- ✅ **Use explicit imports** - Relative imports fail in MCP client environments
+- ✅ **Test module execution** - Always test with `python -m package.server`
+- ✅ **PYTHONPATH configuration** - Essential for module discovery
+
+#### 2. **Logging Best Practices for MCP**
+- ✅ **Console-only logging** - Avoid file handlers in MCP servers
+- ✅ **Minimal configuration** - Use basic logging setup
+- ✅ **Permission awareness** - MCP servers run in restricted environments
+
+#### 3. **Development Workflow**
+- ✅ **Backup original files** - Keep `_old.py` versions for reference
+- ✅ **Test incrementally** - Fix one issue at a time
+- ✅ **Document solutions** - Record fixes for future reference
+
+### Troubleshooting Checklist
+
+**If MCP server fails to start:**
+
+1. **Check imports:**
+   ```bash
+   cd "/Users/yihan/Documents/sharepoint mcp/wiser-mcp-sharepoint"
+   python -c "from src.mcp_sharepoint.server import main; print('✅ Imports work')"
+   ```
+
+2. **Test module execution:**
+   ```bash
+   python -m mcp_sharepoint.server
+   ```
+
+3. **Verify environment variables:**
+   ```bash
+   python -c "from src.mcp_sharepoint.common import SHP_SITE_URL; print(f'Site: {SHP_SITE_URL}')"
+   ```
+
+4. **Check virtual environment:**
+   ```bash
+   which python  # Should show venv path
+   pip list | grep -E "(msal|mcp|requests)"  # Check required packages
+   ```
+
+The MCP server is now **fully compatible with Windsurf** and ready for production use! 🎯✅
