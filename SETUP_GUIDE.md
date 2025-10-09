@@ -832,4 +832,171 @@ logging.basicConfig(
    pip list | grep -E "(msal|mcp|requests)"  # Check required packages
    ```
 
+## 12. Text Extraction Enhancement
+
+### Overview
+
+Enhanced the SharePoint MCP server with comprehensive text extraction capabilities, allowing users to retrieve human-readable content from various document types instead of binary data.
+
+### Implementation Details
+
+#### 1. **Enhanced `resources.py` with Text Extraction Functions**
+
+Added specialized text extraction functions for different file types:
+
+```python
+def extract_text_from_pdf(pdf_content):
+    """Extract text from PDF using PyMuPDF"""
+    
+def extract_text_from_excel(content_bytes, max_rows_per_sheet=None):
+    """Extract text from Excel files with headers and configurable row limit"""
+    
+def extract_text_from_word(content_bytes):
+    """Extract text from Word documents including tables"""
+    
+def extract_text_from_powerpoint(content_bytes):
+    """Extract text from PowerPoint presentations (NEW!)"""
+```
+
+#### 2. **Updated File Type Support**
+
+Extended `FILE_TYPES` configuration to include PowerPoint:
+
+```python
+FILE_TYPES = {
+    'text': ['.txt', '.csv', '.json', '.xml', '.html', '.md', '.js', '.css', '.py'],
+    'pdf': ['.pdf'],
+    'excel': ['.xlsx', '.xls'],
+    'word': ['.docx', '.doc'],
+    'powerpoint': ['.pptx', '.ppt']  # NEW!
+}
+```
+
+#### 3. **Enhanced `get_document_content()` Function**
+
+The function now:
+- ✅ **Automatically detects file types** based on extensions
+- ✅ **Extracts human-readable text** for supported formats
+- ✅ **Returns structured metadata** (page_count, sheet_count, slide_count)
+- ✅ **Graceful fallback** to binary content if extraction fails
+- ✅ **Maintains compatibility** with existing functionality
+
+#### 4. **Enhanced Excel Text Extraction Features**
+
+The improved Excel extraction function includes:
+- 📊 **Column headers included** with "HEADERS:" prefix
+- 🔢 **Configurable row limits** via `max_rows_per_sheet` parameter
+- 📈 **Complete data extraction** when `max_rows_per_sheet=None` (default)
+- 📋 **Visual formatting** with separator lines between headers and data
+- 📝 **Row count summaries** showing total rows and truncation info
+- 🗂️ **Empty sheet handling** with clear "(Empty sheet)" messages
+- 📄 **Sheet separation** with blank lines for better readability
+
+**Usage Examples:**
+```python
+# Extract all rows with headers (default behavior)
+text, sheets = extract_text_from_excel(content_bytes)
+
+# Extract only first 100 rows per sheet
+text, sheets = extract_text_from_excel(content_bytes, max_rows_per_sheet=100)
+
+# Extract only first 50 rows per sheet (old behavior equivalent)
+text, sheets = extract_text_from_excel(content_bytes, max_rows_per_sheet=50)
+```
+
+#### 5. **PowerPoint Text Extraction Features**
+
+The new PowerPoint extraction capability:
+- 📊 **Slide-by-slide extraction** with clear separators
+- 🔤 **Text from shapes and text boxes**
+- 📋 **Table content extraction**
+- 📈 **Slide count metadata**
+- 🎯 **Formatted output** for easy reading
+
+### Dependencies Added
+
+Updated `pyproject.toml` with required packages:
+
+```toml
+dependencies = [
+    # ... existing dependencies ...
+    "python-pptx>=0.6.21",  # PowerPoint processing
+    "msal>=1.24.0",         # Microsoft Graph authentication
+    "requests>=2.31.0",     # HTTP requests
+]
+```
+
+### Usage Examples
+
+#### Before Enhancement (Binary Output)
+```json
+{
+    "name": "report.pptx",
+    "content_type": "binary",
+    "content_base64": "UEsDBBQABgAIAAAAIQAVYrdQ...",
+    "size": 590765
+}
+```
+
+#### After Enhancement (Text Output)
+
+**PowerPoint Example:**
+```json
+{
+    "name": "report.pptx",
+    "content_type": "text",
+    "content": "=== Slide 1 ===\nHR Reporting - July 2024\nFor DA Team\n\n=== Slide 2 ===\nKey Metrics\n...",
+    "original_type": "powerpoint",
+    "slide_count": 5,
+    "size": 590765
+}
+```
+
+**Excel Example (Enhanced with Headers):**
+```json
+{
+    "name": "data.xlsx",
+    "content_type": "text",
+    "content": "=== Sheet1 ===\nHEADERS: Name | Age | Department | Salary\n----------------------------------------\nJohn Doe | 30 | Engineering | 75000\nJane Smith | 28 | Marketing | 65000\n[Total rows: 150]\n\n=== Sheet2 ===\nHEADERS: Product | Quantity | Price\n----------------------------------\nLaptop | 10 | 1200\nMouse | 50 | 25\n[Total rows: 75]",
+    "original_type": "excel",
+    "sheet_count": 2,
+    "size": 28456
+}
+```
+
+### Benefits
+
+- 🎯 **Human-readable content** instead of base64 binary data
+- 📊 **Rich metadata** for better document understanding
+- 🔄 **Backward compatibility** with existing tools
+- 🛡️ **Error resilience** with graceful fallbacks
+- 📈 **Enhanced user experience** for document analysis
+
+### Tools Compatibility
+
+No changes required to `tools.py` - all existing tools automatically benefit from the enhanced text extraction:
+
+- ✅ `Get_Document_Content` - Now returns readable text
+- ✅ `Download_Document` - Unchanged functionality
+- ✅ `List_SharePoint_Documents` - Unchanged functionality
+- ✅ All other tools - Fully compatible
+
+### Testing
+
+The enhanced functionality can be tested with:
+
+```python
+# Test PowerPoint extraction
+result = get_document_content("Reports", "presentation.pptx")
+print(result["content"])  # Human-readable text instead of binary
+
+# Test Excel extraction
+result = get_document_content("Data", "spreadsheet.xlsx")
+print(result["sheet_count"])  # Number of sheets
+
+# Test PDF extraction
+result = get_document_content("Documents", "report.pdf")
+print(result["page_count"])  # Number of pages
+```
+
 The MCP server is now **fully compatible with Windsurf** and ready for production use! 🎯✅
