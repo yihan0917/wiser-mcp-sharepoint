@@ -1,8 +1,60 @@
 # SharePoint MCP Server Setup Guide
 
-This guide documents the complete setup process for the SharePoint MCP server.
+This guide documents the complete setup process for the SharePoint MCP server with HR Analytics and Interactive Visualizations.
 
-## Notes
+## Installation
+
+### Quick Install (Recommended)
+
+Install the MCP SharePoint server with all dependencies:
+
+```bash
+pip install -e .
+```
+
+### Manual Dependency Installation
+
+If you prefer to install dependencies manually:
+
+```bash
+# Core dependencies
+pip install mcp>=1.2.1 msal>=1.24.0 requests>=2.31.0 python-dotenv>=1.0.0
+
+# Document processing
+pip install pymupdf>=1.23.0 python-docx>=1.1.0 python-pptx>=0.6.21 openpyxl>=3.1.0
+
+# Analytics and visualization (NEW in v0.2.0)
+pip install pandas>=2.0.0 numpy>=1.24.0 plotly>=5.17.0
+```
+
+### Installation Verification
+
+After installation, verify all dependencies are available:
+
+```python
+import mcp_sharepoint
+import plotly
+import pandas
+import numpy
+print("✅ All dependencies installed successfully!")
+```
+
+## Version History
+
+### v0.2.0 - HR Analytics & Visualization
+- ✅ Interactive web dashboards with Plotly
+- ✅ Excel export with embedded charts  
+- ✅ Comprehensive HR metrics calculation
+- ✅ Data quality validation
+- ✅ Chart data generation for 5+ visualization types
+
+### v0.1.6 - Enhanced Document Processing
+- ✅ Microsoft Graph API integration
+- ✅ Text extraction from PDF, Word, Excel, PowerPoint
+- ✅ Column context system for HR data
+- ✅ Professional Word document creation
+
+## Setup Notes
 
 - **Graph API is recommended** for new implementations due to better reliability
 - The `.egg-info` folder is created during `pip install -e .` and is normal
@@ -1339,5 +1391,137 @@ The system automatically generates recommendations in 4 categories:
 - **Error Handling**: Graceful degradation for incomplete data
 - **Memory Efficient**: Streaming processing for large datasets
 - **Extensible Design**: Easy to add new metrics and chart types
+
+## 16. Excel Visualization Implementation & Cleanup
+
+### Overview
+
+Successfully implemented and refined Excel chart generation capabilities, focusing on reliable Excel-based visualizations while removing problematic HTML dashboard components. This provides HR teams with professional Excel reports containing embedded charts.
+
+### Phase 1 Implementation (Completed)
+
+#### **Excel Chart Generation**
+- ✅ **Embedded Charts**: Pie charts, bar charts, and line charts directly in Excel workbooks
+- ✅ **Multiple Chart Types**: Source effectiveness (pie), hiring trends (line), time-to-hire distribution (bar)
+- ✅ **Data Integration**: Raw data and charts in the same workbook for easy reference
+- ✅ **SharePoint Upload**: Automatic upload of generated Excel files to SharePoint
+
+#### **Chart Types Supported**
+1. **Source Effectiveness**: Pie chart showing candidate source distribution
+2. **Hiring Trends**: Line chart displaying monthly hiring patterns over time
+3. **Time-to-Hire Distribution**: Bar chart showing hiring duration buckets
+4. **Department Hiring**: Bar chart of hiring volume by department (when data available)
+
+#### **Technical Implementation**
+- **OpenPyXL Integration**: Professional Excel chart creation using openpyxl library
+- **Chart Isolation**: Each chart instance is completely independent to prevent reuse errors
+- **Data Sheets**: Separate sheets for raw data and chart analysis
+- **Error Handling**: Graceful degradation when chart data is unavailable
+
+### Testing Results
+
+Successfully tested with real HR data (`2023 Recruiting Dataset .xlsx`):
+- **✅ Excel Generation**: Created `charts_2023 Recruiting Dataset_analysis.xlsx`
+- **✅ Chart Embedding**: 3 charts successfully embedded (pie, line, bar)
+- **✅ SharePoint Upload**: File uploaded and accessible via SharePoint
+- **✅ Data Integrity**: All 106 positions and 18 columns preserved
+- **✅ Professional Quality**: Charts ready for executive presentations
+
+### Cleanup & Optimization (Phase 1 Refinement)
+
+#### **Removed Components**
+Based on user feedback and technical challenges, removed non-essential components:
+
+1. **HTML Dashboard Generation**
+   - Removed `Create_Interactive_Dashboard` MCP tool
+   - Removed Plotly chart creation functionality
+   - Removed HTML template system and CSS styling
+
+2. **Complete Package Tool**
+   - Removed `Generate_Visual_Report_Package` MCP tool
+   - Eliminated dual-format generation complexity
+
+3. **Dashboard Helper Methods**
+   - Removed `create_dashboard()`, `create_plotly_chart()`, `_create_metrics_cards()`
+   - Removed `_create_data_table()`, `_create_javascript_code()`, `save_dashboard_file()`
+
+4. **Unused Dependencies**
+   - Removed Plotly dependency from `pyproject.toml`
+   - Cleaned up imports in `visualization_helper.py`
+
+#### **Streamlined Architecture**
+- **Focused Functionality**: Excel chart generation only
+- **Reduced Complexity**: Single visualization format (Excel)
+- **Improved Reliability**: Eliminated problematic HTML/JavaScript components
+- **Cleaner Codebase**: Removed 200+ lines of unused code
+
+### Current MCP Tools (Post-Cleanup)
+
+#### **Analytics Tools**
+1. **`Validate_Excel_Data_Quality`**: Data quality validation and issue identification
+2. **`Calculate_HR_Metrics`**: Comprehensive HR metrics calculation
+3. **`Generate_Chart_Data`**: Chart data generation for external tools
+4. **`Analyze_HR_File_Complete`**: Complete analysis with recommendations
+
+#### **Visualization Tools**
+1. **`Create_Excel_With_Charts`**: Excel file generation with embedded charts
+
+### Usage Examples
+
+```python
+# Generate Excel file with embedded charts
+result = await create_excel_with_charts_tool("Data", "recruiting_data.xlsx")
+# Returns: Excel file with pie, bar, and line charts + raw data
+
+# Get comprehensive analysis
+analysis = await analyze_hr_file_complete_tool("Data", "recruiting_data.xlsx") 
+# Returns: metrics, data quality, recommendations
+
+# Generate chart data for external tools
+chart_data = await generate_chart_data_tool("Data", "recruiting_data.xlsx", "source_effectiveness")
+# Returns: labels and values ready for any visualization tool
+```
+
+### File Output Structure
+
+**Generated Excel File Structure:**
+```
+charts_[filename]_analysis.xlsx
+├── Raw Data (Sheet 1)
+│   ├── All original data preserved
+│   └── 18 columns × 106 rows (example)
+└── Charts & Analysis (Sheet 2)
+    ├── Source Effectiveness (Pie Chart)
+    ├── Hiring Trends (Line Chart)
+    ├── Time-to-Hire Distribution (Bar Chart)
+    └── Underlying chart data tables
+```
+
+### Benefits Achieved
+
+- 🎯 **Focused Solution**: Excel-only approach eliminates complexity
+- 📊 **Professional Output**: Charts ready for executive presentations
+- 🔧 **Reliable Generation**: No HTML/JavaScript compatibility issues
+- 📈 **Immediate Usability**: Works with existing Excel workflows
+- 🚀 **Fast Performance**: Streamlined code executes quickly
+- 🛠️ **Easy Maintenance**: Single visualization pathway to maintain
+
+### Dependencies (Final)
+
+**Core Requirements:**
+- `pandas>=2.0.0` - Data processing and analysis
+- `numpy>=1.24.0` - Statistical calculations
+- `openpyxl>=3.1.0` - Excel file creation and chart embedding
+
+**Removed Dependencies:**
+- ~~`plotly>=5.17.0`~~ - No longer needed after HTML dashboard removal
+
+### Future Enhancements (Optional)
+
+If additional visualization capabilities are needed:
+1. **Chart Customization**: Color schemes, chart titles, axis labels
+2. **Additional Chart Types**: Scatter plots, combo charts, pivot charts
+3. **Multi-Sheet Reports**: Separate sheets for different analysis types
+4. **Template System**: Predefined Excel templates for different report types
 
 The MCP server is now **fully compatible with Windsurf** and ready for production use! 🎯✅

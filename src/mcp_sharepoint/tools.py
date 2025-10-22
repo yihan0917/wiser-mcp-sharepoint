@@ -3,7 +3,7 @@ SharePoint MCP tools using Microsoft Graph API
 """
 import base64, os, io
 from functools import wraps
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -11,6 +11,7 @@ from .common import logger, mcp, ACCESS_TOKEN, SITE_ID, DRIVE_ID, make_graph_req
 from .resources import list_folders, list_documents, get_document_content, download_document
 from .context_helper import context_helper
 from .analytics_helper import hr_analytics
+from .visualization_helper import visualization_helper
 
 # Helper functions
 def _handle_sp_operation(func):
@@ -116,6 +117,42 @@ def _create_word_document(content: str) -> bytes:
         doc.save(doc_buffer)
         doc_buffer.seek(0)
         return doc_buffer.getvalue()
+
+def _upload_file_helper(folder_name: str, file_name: str, content: str, is_base64: bool = False):
+    """Shared helper function for uploading files to SharePoint via Graph API"""
+    try:
+        # Special handling for Word documents
+        if file_name.lower().endswith('.docx'):
+            file_content = _create_word_document(content)
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        else:
+            # Convert content for other file types
+            file_content = base64.b64decode(content) if is_base64 else content.encode('utf-8')
+            if file_name.lower().endswith('.html'):
+                content_type = "text/html"
+            elif file_name.lower().endswith('.xlsx'):
+                content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            elif file_name.lower().endswith('.txt'):
+                content_type = "text/plain"
+            else:
+                content_type = "application/octet-stream"
+        
+        # Build endpoint
+        if not folder_name or folder_name == "":
+            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{file_name}:/content"
+        else:
+            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{folder_name}/{file_name}:/content"
+        
+        response = make_graph_request("PUT", endpoint, file_content, content_type)
+        
+        if response and response.status_code in [200, 201]:
+            file_info = response.json()
+            return {"success": True, "file_info": file_info, "message": f"File {file_name} uploaded successfully"}
+        else:
+            return {"success": False, "message": f"Failed to upload file: {response.status_code if response else 'No response'}"}
+            
+    except Exception as e:
+        return {"success": False, "message": f"Error uploading file: {str(e)}"}
 
 def _generate_recommendations(validation_results: dict, metrics: dict) -> list:
     """Generate actionable recommendations based on analysis results"""
@@ -236,32 +273,14 @@ async def upload_document(folder_name: str, file_name: str, content: str, is_bas
     """Upload a new file using Graph API with special handling for Word documents"""
     logger.info(f"Uploading document {file_name} to folder {folder_name}")
     
-    try:
-        # Special handling for Word documents
-        if file_name.lower().endswith('.docx'):
-            file_content = _create_word_document(content)
-            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        else:
-            # Convert content for other file types
-            file_content = base64.b64decode(content) if is_base64 else content.encode('utf-8')
-            content_type = "text/plain" if file_name.lower().endswith('.txt') else "application/octet-stream"
-        
-        # Build endpoint
-        if not folder_name or folder_name == "":
-            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{file_name}:/content"
-        else:
-            endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{folder_name}/{file_name}:/content"
-        
-        response = make_graph_request("PUT", endpoint, file_content, content_type)
-        
-        if response and response.status_code in [200, 201]:
-            file_info = response.json()
-            return _file_success_response(file_info, f"File {file_name} uploaded successfully")
-        else:
-            return {"success": False, "message": f"Failed to upload file: {response.status_code if response else 'No response'}"}
-            
-    except Exception as e:
-        return {"success": False, "message": f"Error uploading file: {str(e)}"}
+    # Use the shared helper function
+    result = _upload_file_helper(folder_name, file_name, content, is_base64)
+    
+    if result["success"]:
+        # Return formatted response for MCP tool
+        return _file_success_response(result["file_info"], result["message"])
+    else:
+        return result
 
 @mcp.tool(name="Delete_Document", description="Delete a document from a SharePoint directory")
 @_handle_sp_operation
@@ -492,4 +511,52 @@ async def analyze_hr_file_complete_tool(folder_name: str, file_name: str):
         
     except Exception as e:
         return {"success": False, "message": f"Error performing complete analysis: {str(e)}"}
+
+# Visualization and Export Tools
+@mcp.tool(name="Create_Excel_With_Charts", description="Create Excel file with embedded charts and download link")
+async def create_excel_with_charts_tool(folder_name: str, file_name: str, chart_types: Optional[List[str]] = None):
+    """Create Excel file with embedded charts from HR data"""
+    try:
+        # Get the Excel content
+        content_result = get_document_content(folder_name, file_name)
+        if not content_result.get("success", True):
+            return {"success": False, "message": "Failed to retrieve Excel file"}
+        
+        # Parse content into DataFrame
+        df = hr_analytics.parse_excel_content(content_result.get("content", ""))
+        if df.empty:
+            return {"success": False, "message": "No data found in Excel file"}
+        
+        # Generate chart configurations
+        if not chart_types:
+            chart_types = ['source_effectiveness', 'hiring_trends', 'time_to_hire_distribution']
+        
+        chart_configs = []
+        for chart_type in chart_types:
+            try:
+                chart_data = hr_analytics.generate_chart_data(df, chart_type)
+                if chart_data.get('data') and len(chart_data['data'].get('values', [])) > 0:
+                    chart_configs.append(chart_data)
+            except:
+                continue
+        
+        # Create Excel with charts
+        excel_bytes = visualization_helper.create_excel_with_charts(df, chart_configs, file_name)
+        
+        # Upload to SharePoint
+        excel_filename = f"charts_{file_name.replace('.xlsx', '')}_analysis.xlsx"
+        upload_result = _upload_file_helper(folder_name, excel_filename, base64.b64encode(excel_bytes).decode(), is_base64=True)
+        
+        return {
+            "success": True,
+            "message": f"Excel file with charts created: {excel_filename}",
+            "file_name": excel_filename,
+            "charts_included": len(chart_configs),
+            "chart_types": [config.get('chart_type') for config in chart_configs],
+            "download_info": "File uploaded to SharePoint and ready for download"
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"Error creating Excel with charts: {str(e)}"}
+
 
