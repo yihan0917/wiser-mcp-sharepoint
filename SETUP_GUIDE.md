@@ -999,4 +999,99 @@ result = get_document_content("Documents", "report.pdf")
 print(result["page_count"])  # Number of pages
 ```
 
+## 13. Word Document Upload Enhancement
+
+### Overview
+
+Enhanced the `Upload_Document` tool to properly handle Word document uploads by creating actual `.docx` files with proper formatting instead of unreadable text files.
+
+### Problem Solved
+
+Previously, when uploading Word documents through the MCP server, the files were saved as plain text, making them unreadable when opened in Microsoft Word. This enhancement ensures Word documents are properly formatted and human-readable.
+
+### Implementation Details
+
+#### 1. Added Required Dependencies
+
+```python
+import io
+from docx import Document
+from docx.shared import Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+```
+
+#### 2. Created Helper Function
+
+Added `_create_word_document()` function in the Helper functions section of `tools.py`:
+
+- **Markdown Parsing**: Supports `#`, `##`, `###` for headings
+- **Text Formatting**: Handles `**bold text**` formatting
+- **Document Structure**: Creates proper Word document with:
+  - Centered main titles
+  - Properly formatted section headings
+  - Bold text formatting
+  - Regular paragraphs
+  - Proper spacing
+
+#### 3. Enhanced Upload_Document Tool
+
+Modified the `Upload_Document` function to:
+
+- **Detect Word Documents**: Automatically identifies `.docx` files
+- **Special Processing**: Routes Word documents through `_create_word_document()`
+- **Proper MIME Type**: Sets correct content type: `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+- **Backward Compatibility**: Maintains existing functionality for all other file types
+
+### Features
+
+- 📝 **Proper Formatting**: Creates actual Word documents with headings, bold text, and proper structure
+- 🎯 **Human-Readable**: Documents open correctly in Microsoft Word
+- 🔄 **Markdown Support**: Converts markdown-like syntax to Word formatting
+- 🛡️ **Error Handling**: Includes fallback to create simple document if parsing fails
+- ✅ **Backward Compatible**: No changes needed for other file types
+
+### Usage Example
+
+```python
+# Upload a properly formatted Word document
+content = """# NGPI Attribute Use Cases Analysis
+
+## Document Overview
+This document outlines use cases identified from analysis.
+
+## Use Case 1: Data Quality Validation
+**Added by:** Yi Han
+**Description:** Implement comprehensive validation...
+
+---
+
+## Summary
+These use cases demonstrate the critical role..."""
+
+# This will now create a proper .docx file
+result = await upload_document("", "analysis.docx", content)
+```
+
+### Testing
+
+The enhanced Word document upload can be tested with:
+
+```python
+# Test Word document creation
+result = upload_document("Documents", "test.docx", markdown_content)
+print(result["success"])  # Should be True
+
+# Verify the uploaded document is readable
+content = get_document_content("Documents", "test.docx")
+print(content["content_type"])  # Should be "text" (readable)
+```
+
+### Benefits
+
+- 📄 **Professional Documents**: Creates properly formatted Word documents
+- 🎯 **User-Friendly**: Documents are immediately readable in Word applications
+- 🔧 **Seamless Integration**: Works transparently with existing MCP workflows
+- 📊 **Rich Formatting**: Supports headings, bold text, and document structure
+- 🛡️ **Robust**: Includes error handling and fallback mechanisms
+
 The MCP server is now **fully compatible with Windsurf** and ready for production use! 🎯✅

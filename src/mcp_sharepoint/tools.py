@@ -1,9 +1,12 @@
 """
 SharePoint MCP tools using Microsoft Graph API
 """
-import base64, os
+import base64, os, io
 from functools import wraps
 from typing import Optional, Dict, Any
+from docx import Document
+from docx.shared import Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from .common import logger, mcp, ACCESS_TOKEN, SITE_ID, DRIVE_ID, make_graph_request
 from .resources import list_folders, list_documents, get_document_content, download_document
 
@@ -43,6 +46,74 @@ def _folder_success_response(folder_info: Dict[str, Any], message: str) -> Dict[
             "url": folder_info.get('webUrl')
         }
     }
+
+def _create_word_document(content: str) -> bytes:
+    """Create a proper Word document from markdown-like content"""
+    try:
+        # Create a new Document
+        doc = Document()
+        
+        # Split content into lines for processing
+        lines = content.split('\n')
+        i = 0
+        
+        while i < len(lines):
+            line = lines[i].strip()
+            
+            if not line:
+                # Add empty paragraph for spacing
+                doc.add_paragraph()
+                i += 1
+                continue
+            
+            # Handle headings
+            if line.startswith('# '):
+                # Main title (level 0)
+                title = doc.add_heading(line[2:], 0)
+                title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            elif line.startswith('## '):
+                # Section heading (level 1)
+                doc.add_heading(line[3:], 1)
+            elif line.startswith('### '):
+                # Subsection heading (level 2)
+                doc.add_heading(line[4:], 2)
+            elif line.startswith('---'):
+                # Horizontal rule - add spacing
+                doc.add_paragraph()
+            elif line.startswith('**') and line.endswith('**'):
+                # Bold text as separate paragraph
+                para = doc.add_paragraph()
+                para.add_run(line[2:-2]).bold = True
+            elif '**' in line:
+                # Mixed formatting in paragraph
+                para = doc.add_paragraph()
+                parts = line.split('**')
+                for j, part in enumerate(parts):
+                    if j % 2 == 0:
+                        para.add_run(part)
+                    else:
+                        para.add_run(part).bold = True
+            else:
+                # Regular paragraph
+                doc.add_paragraph(line)
+            
+            i += 1
+        
+        # Save to bytes
+        doc_buffer = io.BytesIO()
+        doc.save(doc_buffer)
+        doc_buffer.seek(0)
+        return doc_buffer.getvalue()
+        
+    except Exception as e:
+        logger.error(f"Error creating Word document: {e}")
+        # Fallback: create simple document with plain text
+        doc = Document()
+        doc.add_paragraph(content)
+        doc_buffer = io.BytesIO()
+        doc.save(doc_buffer)
+        doc_buffer.seek(0)
+        return doc_buffer.getvalue()
 
 # Basic tool implementations
 @mcp.tool(name="List_SharePoint_Folders", description="List folders in the specified SharePoint directory or root if not specified")
@@ -104,21 +175,24 @@ async def create_folder(folder_name: str, parent_folder: Optional[str] = None):
 @mcp.tool(name="Upload_Document", description="Upload a new file to a SharePoint directory")
 @_handle_sp_operation
 async def upload_document(folder_name: str, file_name: str, content: str, is_base64: bool = False):
-    """Upload a new file using Graph API"""
+    """Upload a new file using Graph API with special handling for Word documents"""
     logger.info(f"Uploading document {file_name} to folder {folder_name}")
     
     try:
-        # Convert content
-        file_content = base64.b64decode(content) if is_base64 else content.encode('utf-8')
+        # Special handling for Word documents
+        if file_name.lower().endswith('.docx'):
+            file_content = _create_word_document(content)
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        else:
+            # Convert content for other file types
+            file_content = base64.b64decode(content) if is_base64 else content.encode('utf-8')
+            content_type = "text/plain" if file_name.lower().endswith('.txt') else "application/octet-stream"
         
         # Build endpoint
         if not folder_name or folder_name == "":
             endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{file_name}:/content"
         else:
             endpoint = f"sites/{SITE_ID}/drives/{DRIVE_ID}/root:/{folder_name}/{file_name}:/content"
-        
-        # Determine content type
-        content_type = "text/plain" if file_name.lower().endswith('.txt') else "application/octet-stream"
         
         response = make_graph_request("PUT", endpoint, file_content, content_type)
         
