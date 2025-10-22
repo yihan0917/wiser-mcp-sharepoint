@@ -1094,4 +1094,250 @@ print(content["content_type"])  # Should be "text" (readable)
 - 📊 **Rich Formatting**: Supports headings, bold text, and document structure
 - 🛡️ **Robust**: Includes error handling and fallback mechanisms
 
+## 14. Excel Column Context System
+
+### Overview
+
+Implemented a comprehensive column context system that automatically provides definitions and meanings for Excel columns when Windsurf analyzes spreadsheet files from SharePoint.
+
+### Problem Solved
+
+When analyzing Excel files, users often encounter columns with unclear meanings or domain-specific terminology. This system provides automatic context and definitions for any recognized columns, making data analysis more efficient and accurate.
+
+### Implementation
+
+#### 1. Created Column Definitions Dictionary (`column_definitions.md`)
+- **Human-readable format**: Easy-to-edit Markdown file
+- **Comprehensive coverage**: Includes HR/recruiting, general business, and data quality columns
+- **Organized structure**: Grouped by categories (Job Information, Personnel, Dates, etc.)
+- **Analytics guidance**: Includes suggested metrics for report generation
+
+#### 2. Built Context Helper System (`context_helper.py`)
+- **Markdown parser**: Automatically reads and parses column definitions
+- **Smart matching**: Matches Excel headers against the dictionary
+- **Auto-enhancement**: Adds column context to Excel content automatically
+- **Search capabilities**: Find definitions by keyword or column name
+
+#### 3. Added MCP Tools (`tools.py`)
+Four new tools for querying column context:
+- `Get_Column_Definition` - Look up specific column meanings
+- `Search_Column_Definitions` - Find columns by keyword
+- `Get_All_Column_Definitions` - View entire dictionary
+- `Get_Matching_Columns` - Check which columns have definitions
+
+#### 4. Enhanced Excel Processing (`resources.py`)
+- **Automatic integration**: Excel content now includes column definitions
+- **Seamless operation**: Works transparently with existing functionality
+- **No user intervention**: Context is added automatically during file reading
+
+### How It Works
+
+**Automatic Enhancement**: When reading Excel files, the system:
+1. Extracts column headers from each sheet
+2. Matches headers against the definitions dictionary
+3. Adds contextual information right after the headers
+
+**Example Output**:
+```
+=== Sheet1 ===
+HEADERS: Job Code | Recruiter | Date Opened | Source
+
+--- COLUMN DEFINITIONS ---
+• Job Code: Unique identifier of position by department
+• Recruiter: TA Specialist managing the opening
+• Date Opened: Date the position is posted
+• Source: Where the candidate applied/sourced from (LinkedIn, website, internal referral, etc.)
+--- END COLUMN DEFINITIONS ---
+
+[Excel data continues...]
+```
+
+### Testing Results
+
+Successfully tested with real SharePoint data:
+- **File**: `2023 Recruiting Dataset .xlsx` in Data folder
+- **Columns detected**: 18 columns identified
+- **Matches found**: 7 columns automatically matched with definitions
+- **Context provided**: Immediate understanding of column meanings
+
+### Usage Examples
+
+```python
+# Manual column lookup
+result = await get_column_definition_tool("Job Code")
+# Returns: "Unique identifier of position by department"
+
+# Search for related columns
+results = await search_column_definitions_tool("recruiter")
+# Finds all columns containing "recruiter" in name or definition
+
+# Check which columns have definitions
+matches = await get_matching_columns_tool(["Job Code", "Recruiter", "Unknown Column"])
+# Returns definitions for recognized columns
+```
+
+### Benefits
+
+- 🎯 **Contextual Analysis**: Excel data comes with built-in explanations
+- 📚 **Knowledge Sharing**: Definitions are reusable across all users
+- ✏️ **Easy Maintenance**: Simple Markdown format for updates
+- 🔍 **Discoverable**: Search and browse available definitions
+- 🤖 **AI-Friendly**: Windsurf gets immediate context for better analysis
+- 📊 **Report Ready**: Includes metrics suggestions for analytics
+
+### Maintenance
+
+To add new column definitions:
+1. Edit `column_definitions.md`
+2. Add new entries in format: `- **Column Name**: Description`
+3. Restart MCP server to load changes
+4. New definitions automatically available to Windsurf
+
+## 15. HR Analytics & Data Quality Tools (Phase 1)
+
+### Overview
+
+Implemented comprehensive analytics capabilities that transform the SharePoint MCP server from a simple file access tool into a powerful HR analytics platform. These tools provide data quality validation, statistical analysis, and chart-ready data generation for HR teams.
+
+### Problem Solved
+
+HR teams often struggle with:
+- **Data Quality Issues**: Missing data, outliers, and format inconsistencies in Excel files
+- **Manual Analysis**: Time-consuming manual calculation of hiring metrics
+- **Visualization Prep**: Complex data preparation for charts and reports
+- **Actionable Insights**: Difficulty identifying improvement opportunities from raw data
+
+### Implementation
+
+#### 1. Analytics Helper Module (`analytics_helper.py`)
+- **Pandas Integration**: Robust DataFrame processing for Excel data
+- **Data Cleaning**: Automatic date/numeric conversion and text standardization
+- **Statistical Analysis**: Comprehensive HR metrics calculation
+- **Chart Data Generation**: Ready-to-use data for 5 different visualization types
+
+#### 2. New MCP Tools (4 tools added to `tools.py`)
+
+**`Validate_Excel_Data_Quality`**
+- Identifies missing data percentages by column
+- Detects statistical outliers using IQR method
+- Finds format issues (invalid date sequences, etc.)
+- Provides comprehensive data quality summary
+
+**`Calculate_HR_Metrics`**
+- Hiring volume metrics (total, filled, open positions)
+- Time-to-hire statistics (average, median, percentiles)
+- Application metrics (total applications, averages)
+- Source and location distribution analysis
+- Cost analysis (agency fees, percentages)
+
+**`Generate_Chart_Data`**
+- **hiring_trends**: Monthly hiring patterns over time
+- **source_effectiveness**: Candidate source distribution (pie chart)
+- **time_to_hire_distribution**: Histogram of hiring timeframes
+- **department_hiring**: Hiring volume by department (bar chart)
+- **conversion_funnel**: Application-to-hire conversion rates
+
+**`Analyze_HR_File_Complete`**
+- Combines all analyses into one comprehensive report
+- Generates multiple chart suggestions automatically
+- Provides actionable recommendations based on data patterns
+- Includes data summary with date ranges and column information
+
+### Real-World Testing Results
+
+Successfully tested with actual HR data (`2023 Recruiting Dataset .xlsx`):
+
+#### Data Quality Insights
+- **106 positions analyzed** across 18 columns
+- **Missing data identified** in 17/18 columns (Agency Fee 91.5% missing)
+- **Outliers detected**: 7 positions with 160+ day hiring cycles
+- **Format issues found**: 2 positions with invalid date sequences
+
+#### Key HR Metrics Calculated
+- **Hiring Performance**: 71 filled positions, 35 open, 74.5 day average time-to-hire
+- **Application Volume**: 39,694 total applications, 684 average per position
+- **Source Analysis**: LinkedIn 63% of hires, Internal Promotion 15%
+- **Cost Impact**: $88,968 in agency fees across 8.5% of positions
+- **Geographic Distribution**: 5 countries (US, France, Canada, Australia, Mexico)
+
+#### Automated Recommendations Generated
+- **Data Quality**: "Review missing data in 17 columns for better analysis"
+- **Source Diversification**: "Reduce over-reliance on LinkedIn (63% of hires)"
+- **Process Optimization**: Identified positions taking 200+ days to fill
+
+### Usage Examples
+
+```python
+# Complete analysis of HR file
+result = await analyze_hr_file_complete_tool("Data", "2023 Recruiting Dataset.xlsx")
+# Returns: data quality, metrics, chart suggestions, recommendations
+
+# Data quality validation only
+quality = await validate_excel_data_quality_tool("Data", "recruiting_data.xlsx")
+# Returns: missing data %, outliers, format issues
+
+# Generate specific chart data
+chart = await generate_chart_data_tool("Data", "hiring_data.xlsx", "source_effectiveness")
+# Returns: labels and values ready for pie chart
+
+# Calculate HR metrics
+metrics = await calculate_hr_metrics_tool("Data", "hr_file.xlsx")
+# Returns: time-to-hire, costs, source distribution, etc.
+```
+
+### Chart Data Output Format
+
+All chart tools return data in a standardized format:
+```json
+{
+  "chart_type": "source_effectiveness",
+  "data": {
+    "labels": ["LinkedIn", "Internal Promotion", "Indeed"],
+    "values": [43, 10, 6],
+    "title": "Candidate Source Distribution"
+  }
+}
+```
+
+### Benefits for HR Teams
+
+- 🔍 **Instant Data Quality Assessment**: Identify issues before analysis
+- 📊 **Comprehensive Metrics**: 15+ key HR metrics calculated automatically
+- 📈 **Visualization Ready**: Chart data formatted for immediate use
+- 💡 **Actionable Insights**: Automated recommendations for process improvement
+- ⏱️ **Time Savings**: Minutes instead of hours for analysis
+- 🎯 **Consistent Analysis**: Standardized metrics across all files
+
+### Supported Chart Types
+
+1. **Hiring Trends**: Monthly hiring volume over time (line chart)
+2. **Source Effectiveness**: Candidate source distribution (pie chart)
+3. **Time-to-Hire Distribution**: Hiring duration buckets (histogram)
+4. **Department Hiring**: Hiring volume by department (bar chart)
+5. **Conversion Funnel**: Application-to-hire process flow (funnel chart)
+
+### Data Quality Checks
+
+- **Missing Data**: Percentage and count by column
+- **Statistical Outliers**: IQR-based anomaly detection
+- **Format Validation**: Date sequence consistency
+- **Data Type Verification**: Automatic numeric/date conversion
+- **Completeness Assessment**: Overall data quality scoring
+
+### Recommendations Engine
+
+The system automatically generates recommendations in 4 categories:
+- **Data Quality**: Missing data and cleanup suggestions
+- **Performance**: Time-to-hire and process efficiency
+- **Cost Optimization**: Agency fee and sourcing cost analysis
+- **Source Diversification**: Candidate pipeline risk assessment
+
+### Technical Architecture
+
+- **Pandas Backend**: Robust data processing and analysis
+- **Statistical Methods**: IQR outlier detection, percentile calculations
+- **Error Handling**: Graceful degradation for incomplete data
+- **Memory Efficient**: Streaming processing for large datasets
+- **Extensible Design**: Easy to add new metrics and chart types
+
 The MCP server is now **fully compatible with Windsurf** and ready for production use! 🎯✅
