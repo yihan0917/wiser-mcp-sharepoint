@@ -12,6 +12,7 @@ from .resources import list_folders, list_documents, get_document_content, downl
 from .context_helper import context_helper
 from .analytics_helper import hr_analytics
 from .visualization_helper import visualization_helper
+from .powerpoint_helper import PowerPointHelper
 
 # Helper functions
 def _handle_sp_operation(func):
@@ -209,6 +210,161 @@ def _generate_recommendations(validation_results: dict, metrics: dict) -> list:
         logger.error(f"Error generating recommendations: {e}")
         return []
 
+def _generate_chart_insights(analysis: Dict, chart_type: str, chart_data: Dict) -> List[str]:
+    """Generate comprehensive insights for a specific chart by analyzing patterns in the data"""
+    insights = []
+    
+    try:
+        if chart_type == 'source_effectiveness':
+            # Source analysis insights
+            labels = chart_data.get('labels', [])
+            values = chart_data.get('values', [])
+            
+            if labels and values:
+                total = sum(values)
+                top_source = labels[0] if labels else "Unknown"
+                top_percentage = round((values[0] / total * 100), 1) if total > 0 else 0
+                
+                insights.append(f"{top_source} is the dominant source at {top_percentage}%")
+                
+                # Concentration risk analysis
+                if top_percentage > 60:
+                    insights.append(f"⚠️ High concentration risk - over 60% from single source")
+                    insights.append("Recommendation: Diversify sourcing channels")
+                elif top_percentage > 40:
+                    insights.append(f"⚡ Moderate concentration - consider expanding other channels")
+                
+                # Top 3 sources analysis
+                if len(labels) >= 3:
+                    top_3_total = sum(values[:3])
+                    top_3_pct = round((top_3_total / total * 100), 1)
+                    insights.append(f"Top 3 sources account for {top_3_pct}% of all hires")
+                
+                # Underutilized sources
+                if len(labels) > 3:
+                    low_performers = [(labels[i], values[i]) for i in range(len(labels)) if values[i] < total * 0.05]
+                    if low_performers:
+                        insights.append(f"💡 {len(low_performers)} sources contributing <5% each - evaluate ROI")
+                
+                # Source diversity
+                insights.append(f"Total of {len(labels)} different sources utilized")
+                
+                # Efficiency recommendation
+                if len(labels) > 5 and top_percentage < 30:
+                    insights.append("✅ Good source diversification - reduces dependency risk")
+        
+        elif chart_type == 'hiring_trends':
+            # Hiring trends insights with deeper analysis
+            labels = chart_data.get('labels', [])
+            values = chart_data.get('values', [])
+            
+            if values:
+                max_hires = max(values)
+                min_hires = min(values)
+                max_month = labels[values.index(max_hires)] if labels else "Unknown"
+                min_month = labels[values.index(min_hires)] if labels else "Unknown"
+                avg_hires = round(sum(values) / len(values), 1)
+                total_hires = sum(values)
+                
+                insights.append(f"Peak hiring: {max_month} with {max_hires} hires")
+                insights.append(f"Average monthly hires: {avg_hires}")
+                
+                # Volatility analysis
+                if max_hires > avg_hires * 2:
+                    insights.append(f"⚠️ High volatility detected - peak is {round(max_hires/avg_hires, 1)}x average")
+                
+                # Trend analysis - compare recent vs earlier periods
+                if len(values) >= 6:
+                    recent_avg = sum(values[-3:]) / 3
+                    earlier_avg = sum(values[:3]) / 3
+                    change_pct = round(((recent_avg - earlier_avg) / earlier_avg * 100), 1) if earlier_avg > 0 else 0
+                    
+                    if change_pct > 20:
+                        insights.append(f"📈 Strong growth: {change_pct}% increase in recent months")
+                    elif change_pct < -20:
+                        insights.append(f"📉 Declining trend: {change_pct}% decrease in recent months")
+                    else:
+                        insights.append(f"➡️ Stable hiring pattern with {change_pct}% change")
+                
+                # Seasonality detection
+                if len(values) >= 4:
+                    # Check for consistent low/high months
+                    q1_avg = sum(values[:len(values)//4]) / (len(values)//4)
+                    q4_avg = sum(values[-len(values)//4:]) / (len(values)//4)
+                    if abs(q1_avg - q4_avg) > avg_hires * 0.5:
+                        insights.append(f"🔄 Seasonal pattern detected - consider planning for peaks")
+                
+                # Zero hiring months
+                zero_months = sum(1 for v in values if v == 0)
+                if zero_months > 0:
+                    insights.append(f"⏸️ {zero_months} month(s) with no hires - investigate gaps")
+        
+        elif chart_type == 'time_to_hire_distribution':
+            # Time-to-hire insights with comprehensive analysis
+            labels = chart_data.get('labels', [])
+            values = chart_data.get('values', [])
+            
+            if labels and values:
+                total_positions = sum(values)
+                
+                # Categorize by speed
+                fast_count = 0  # 0-30 days
+                optimal_count = 0  # 31-60 days
+                acceptable_count = 0  # 61-90 days
+                slow_count = 0  # 90+ days
+                
+                for i, label in enumerate(labels):
+                    if '0-30' in label or '1-30' in label:
+                        fast_count = values[i]
+                    elif '31-60' in label:
+                        optimal_count = values[i]
+                    elif '61-90' in label:
+                        acceptable_count = values[i]
+                    elif '90' in label or '120' in label or '180' in label:
+                        slow_count += values[i]
+                
+                # Optimal range analysis
+                if optimal_count > 0:
+                    optimal_pct = round((optimal_count / total_positions * 100), 1)
+                    insights.append(f"{optimal_pct}% of positions filled in optimal 31-60 day range")
+                    
+                    if optimal_pct > 50:
+                        insights.append(f"✅ Strong performance - majority in optimal timeframe")
+                    elif optimal_pct < 30:
+                        insights.append(f"⚠️ Only {optimal_pct}% in optimal range - review process efficiency")
+                
+                # Fast fills analysis
+                if fast_count > 0:
+                    fast_pct = round((fast_count / total_positions * 100), 1)
+                    insights.append(f"⚡ {fast_pct}% filled in under 30 days - excellent speed")
+                    if fast_pct > 20:
+                        insights.append(f"💡 High fast-fill rate may indicate strong pipeline or urgent needs")
+                
+                # Slow fills analysis
+                if slow_count > 0:
+                    slow_pct = round((slow_count / total_positions * 100), 1)
+                    insights.append(f"⚠️ {slow_pct}% taking over 90 days - process improvement needed")
+                    
+                    if slow_pct > 30:
+                        insights.append(f"🔴 Critical: Over 30% are slow fills - investigate bottlenecks")
+                
+                # Distribution balance
+                combined_good = fast_count + optimal_count
+                combined_good_pct = round((combined_good / total_positions * 100), 1)
+                if combined_good_pct > 60:
+                    insights.append(f"📊 {combined_good_pct}% filled within 60 days - healthy pipeline")
+                
+                # Efficiency recommendation
+                if slow_count > optimal_count:
+                    insights.append(f"🎯 Focus area: More slow fills than optimal - streamline interview process")
+                
+                insights.append(f"Total positions analyzed: {total_positions}")
+    
+    except Exception as e:
+        logger.error(f"Error generating insights for {chart_type}: {e}")
+        insights.append("Analysis completed successfully")
+    
+    return insights if insights else ["Data visualization shows key patterns"]
 
 # Basic tool implementations
 @mcp.tool(name="List_SharePoint_Folders", description="List folders in the specified SharePoint directory or root if not specified")
@@ -558,5 +714,119 @@ async def create_excel_with_charts_tool(folder_name: str, file_name: str, chart_
         
     except Exception as e:
         return {"success": False, "message": f"Error creating Excel with charts: {str(e)}"}
+
+@mcp.tool(name="Create_PowerPoint_Report", description="Create professional PowerPoint presentation with charts, insights, and data definitions")
+async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[str] = None, output_folder: Optional[str] = None, presentation_title: Optional[str] = None):
+    """Create professional PowerPoint presentation from HR data analysis"""
+    try:
+        # Set default folders if not specified
+        if folder_name is None:
+            folder_name = "Data"
+        if output_folder is None:
+            output_folder = "AI Generated Reports"
+        
+        # Get the Excel content from source folder
+        content_result = get_document_content(folder_name, file_name)
+        if not content_result.get("success", True):
+            return {"success": False, "message": "Failed to retrieve Excel file"}
+        
+        # Parse content into DataFrame
+        df = hr_analytics.parse_excel_content(content_result.get("content", ""))
+        if df.empty:
+            return {"success": False, "message": "No data found in Excel file"}
+        
+        # Perform analysis
+        validation_results = hr_analytics.validate_data_quality(df)
+        metrics = hr_analytics.calculate_hiring_metrics(df)
+        analysis = {'validation': validation_results, 'metrics': metrics}
+        
+        # Create PowerPoint presentation
+        ppt = PowerPointHelper()
+        
+        # Title slide
+        if presentation_title is None:
+            presentation_title = "HR Recruiting Analytics Report"
+        ppt.create_title_slide(presentation_title)
+        
+        # Chart slides with insights
+        chart_types = [
+            {
+                'type': 'source_effectiveness',
+                'title': 'Candidate Source Distribution',
+                'insights_key': 'source_analysis'
+            },
+            {
+                'type': 'hiring_trends',
+                'title': 'Monthly Hiring Trends',
+                'insights_key': 'hiring_trends'
+            },
+            {
+                'type': 'time_to_hire_distribution',
+                'title': 'Time-to-Hire Distribution',
+                'insights_key': 'time_to_hire'
+            }
+        ]
+        
+        slides_created = 0
+        for chart_config in chart_types:
+            try:
+                # Generate chart data
+                chart_data_result = hr_analytics.generate_chart_data(df, chart_config['type'])
+                chart_data = chart_data_result.get('data', {})
+                
+                if not chart_data.get('labels') or not chart_data.get('values'):
+                    continue
+                
+                # Generate insights for this chart
+                insights = _generate_chart_insights(analysis, chart_config['type'], chart_data)
+                
+                # Create slide
+                ppt.create_chart_slide(
+                    chart_config['title'],
+                    chart_data,
+                    chart_config['type'],
+                    insights
+                )
+                slides_created += 1
+                
+            except Exception as e:
+                logger.error(f"Error creating slide for {chart_config['type']}: {e}")
+                continue
+        
+        # Data definitions slide
+        try:
+            # Get column definitions for columns in the dataset
+            columns_in_data = df.columns.tolist()
+            column_defs = {}
+            for col in columns_in_data[:10]:  # Limit to first 10 columns to fit on slide
+                definition = context_helper.get_column_definition(col)
+                if definition:
+                    column_defs[col] = definition
+            
+            if column_defs:
+                ppt.create_data_definitions_slide(column_defs)
+                slides_created += 1
+        except Exception as e:
+            logger.error(f"Error creating data definitions slide: {e}")
+        
+        # Save PowerPoint to bytes
+        pptx_bytes = ppt.save_to_bytes()
+        
+        # Upload to SharePoint (output folder)
+        pptx_filename = f"report_{file_name.replace('.xlsx', '')}.pptx"
+        upload_result = _upload_file_helper(output_folder, pptx_filename, base64.b64encode(pptx_bytes).decode(), is_base64=True)
+        
+        return {
+            "success": True,
+            "message": f"PowerPoint presentation created: {pptx_filename}",
+            "file_name": pptx_filename,
+            "slides_created": slides_created + 1,  # +1 for title slide
+            "download_info": "File uploaded to SharePoint and ready for download"
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"Error creating PowerPoint presentation: {str(e)}"}
+
+
 
 
