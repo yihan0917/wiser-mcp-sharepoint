@@ -1709,3 +1709,328 @@ If additional capabilities are needed:
 7. **Speaker Notes**: Auto-generated presenter notes with talking points
 
 The MCP server is now **fully compatible with Windsurf** and ready for production use with both Excel and PowerPoint report generation! 🎯✅
+
+## 18. Context Management System Integration
+
+### Overview
+
+The SharePoint MCP server includes a comprehensive context management system that provides rich business context to all tools, enabling more intelligent and context-aware responses.
+
+### Context Files and Categories
+
+The system organizes context into 4 categories across 6 markdown files:
+
+#### **1. Columns Context** (`columns`)
+- **Files:** `column_definitions.md`
+- **Content:** Excel column definitions for HR/recruiting data
+- **Parsed:** 73+ column definitions automatically extracted
+- **Used By:** All Excel analysis tools
+
+#### **2. Metrics Context** (`metrics`)
+- **Files:** `metrics_definitions.md`
+- **Content:** HR metrics, KPIs, and analytics guidance
+- **Used By:** Analytics and reporting tools
+
+#### **3. Business Context** (`business`)
+- **Files:** `company_overview.md`, `engineering_overview.md`
+- **Content:** Company mission, values, strategy, culture
+- **Used By:** Report generation, analysis tools
+
+#### **4. Recruiting Context** (`recruiting`)
+- **Files:** `hiring_guide.md`, `career_path.md`
+- **Content:** Hiring processes, career frameworks
+- **Used By:** HR metrics, validation tools
+
+### Tool-Context Mapping
+
+Each tool automatically receives relevant context:
+
+| Tool | Context Categories | What It Gets |
+|------|-------------------|--------------|
+| **Analyze_HR_File_Complete** | columns, business, metrics | Column defs + company values + KPI definitions |
+| **Calculate_HR_Metrics** | columns, metrics, recruiting | Column defs + metrics + hiring guidelines |
+| **Validate_Excel_Data_Quality** | columns, recruiting | Column defs + hiring best practices |
+| **Create_PowerPoint_Report** | columns, business, metrics, recruiting | All context for comprehensive reports |
+| **Create_Excel_With_Charts** | columns, metrics | Column defs + chart guidance |
+| **Generate_Chart_Data** | columns, metrics | Column defs + visualization guidance |
+
+### New MCP Tools for Context Access
+
+#### **1. Get_Context_Summary**
+Get summary of all loaded context files and categories
+
+**Returns:**
+```json
+{
+  "success": true,
+  "summary": {
+    "total_files": 6,
+    "total_characters": 53138,
+    "categories": ["columns", "metrics", "business", "recruiting"],
+    "column_definitions_count": 73
+  }
+}
+```
+
+#### **2. Search_All_Context**
+Search across all context files for specific information
+
+**Parameters:**
+- `search_term` (string) - The term to search for
+- `categories` (list, optional) - Categories to search in
+
+**Example:**
+```python
+# Search for information about diversity
+results = context_manager.search_context('diversity', categories=['business', 'recruiting'])
+```
+
+### How Context Works
+
+#### **Automatic Context Loading**
+```python
+# On server startup
+context_manager = ContextManager()
+# Automatically loads all .md files from context/ directory
+# Categorizes them based on CONTEXT_CATEGORIES mapping
+# Parses column definitions for quick lookup
+```
+
+#### **Tool Context Injection**
+```python
+# When a tool is called
+context = context_manager.get_context_for_tool('Analyze_HR_File_Complete')
+# Returns combined context from: columns, business, metrics categories
+# AI receives this context to inform its responses
+```
+
+#### **Column Definition Matching**
+```python
+# When analyzing Excel files
+matching_defs = context_manager.get_matching_columns(df.columns.tolist())
+# Automatically matches Excel columns to definitions
+# Enhances analysis with column context
+```
+
+### Context File Standards
+
+All context files follow these standards:
+
+**Format:**
+- ✅ Markdown (.md) format
+- ✅ Clear headings (`#`, `##`, `###`)
+- ✅ Bullet points for lists
+- ✅ Bold for emphasis (`**text**`)
+- ✅ Tables for structured data
+
+**Content:**
+- ✅ No sensitive financial data
+- ✅ No personal names
+- ✅ No external URLs
+- ✅ No internal document references
+- ✅ No vendor/partner names
+- ✅ No specific interview questions
+
+### Testing Context Integration
+
+Run the test script to verify context loading:
+
+```bash
+source venv/bin/activate
+python test_context_integration.py
+```
+
+**Expected output:**
+```
+✓ Total files loaded: 6
+✓ Total characters: 53,138
+✓ Categories: columns, metrics, business, recruiting
+✓ Column definitions: 73
+✓ Context for tools: Working
+✓ Column matching: Working
+```
+
+### Usage Example: Context-Aware Analysis
+
+**Before Context:**
+> "Average time-to-hire is 75 days"
+
+**With Context:**
+> "⚠️ Average time-to-hire is 75 days, which exceeds the company target of 60 days by 25%. Based on company values emphasizing efficiency and the recruiting guidelines, recommend reviewing interview scheduling and hiring manager availability."
+
+### Benefits
+
+**For Users:**
+- 🎯 More intelligent, context-aware responses
+- 📊 Better recommendations aligned with company goals
+- 🔍 Deeper insights from data analysis
+- 📝 More comprehensive reports
+
+**For Developers:**
+- 🛠️ Easy to add new context files
+- 🔧 Simple tool-context mapping
+- 📦 Modular and maintainable
+- 🧪 Easy to test and extend
+
+**For the Business:**
+- 💼 AI understands company values and strategy
+- 📈 Recommendations aligned with business goals
+- 🎓 Knowledge embedded in the system
+- 🔒 Sensitive data properly protected
+
+### Adding New Context Files
+
+To add new context files:
+
+1. **Create markdown file** in `src/mcp_sharepoint/context/`
+2. **Add to category mapping** in `context_manager.py`:
+   ```python
+   CONTEXT_CATEGORIES = {
+       'columns': ['column_definitions.md'],
+       'metrics': ['metrics_definitions.md'],
+       'business': ['company_overview.md', 'engineering_overview.md', 'your_new_file.md'],
+       'recruiting': ['hiring_guide.md', 'career_path.md']
+   }
+   ```
+3. **Update tool mapping** if needed:
+   ```python
+   TOOL_CONTEXT_MAP = {
+       'Your_Tool_Name': ['columns', 'business', 'your_new_category'],
+   }
+   ```
+4. **Restart server** - Context loads automatically on startup
+
+### Context Files Location
+
+All context files are stored in:
+```
+src/mcp_sharepoint/context/
+├── column_definitions.md      # Excel column definitions
+├── metrics_definitions.md     # HR metrics and KPIs
+├── company_overview.md        # Company mission and values
+├── engineering_overview.md    # Engineering culture
+├── hiring_guide.md           # Hiring processes
+└── career_path.md            # Career frameworks
+```
+
+### Migration Notes
+
+The old `context_helper.py` has been removed. All tools now use `context_manager.py`:
+
+**What Changed:**
+- ✅ `context_helper.get_column_definition()` → `context_manager.get_column_definition()`
+- ✅ `context_helper.get_all_definitions()` → `context_manager.get_all_column_definitions()`
+- ✅ `context_helper.get_matching_columns()` → `context_manager.get_matching_columns()`
+- ✅ `context_helper.search_definitions()` → `context_manager.search_context()`
+
+**What's New:**
+- ✅ `context_manager.get_context_for_tool()` - Get context for specific tool
+- ✅ `context_manager.get_context_by_category()` - Get all context in a category
+- ✅ `context_manager.get_context_summary()` - Get statistics
+- ✅ `context_manager.search_context()` - Search across all context
+
+### Status
+
+**Context System:** ✅ **Production Ready**  
+**Files Loaded:** 6 context files  
+**Column Definitions:** 73 parsed definitions  
+**Integration:** Complete
+
+## 19. Training Data Generation (One-Time Setup)
+
+### Overview
+
+For testing and demonstration purposes, a training data generator script was created to populate SharePoint with realistic HR recruiting data. This is a **one-time setup** that creates sample Excel files for testing the MCP server's analytics capabilities.
+
+### Quick Start
+
+Generate training data with a single command:
+
+```bash
+# Activate environment and run
+source venv/bin/activate && python generate_training_data.py
+```
+
+### What Gets Generated
+
+The script automatically creates and uploads 4 Excel files to SharePoint:
+
+| File | Records | Columns | Purpose |
+|------|---------|---------|---------|
+| **Filled Positions** | 75-100 | 17 | Candidate hiring data |
+| **Time In Step Q3** | 75-100 | 27 | Pipeline time tracking |
+| **Recruiting Report** | 75-100 | 19 | Funnel metrics |
+| **All Departments** | 75-100 | 24 | Department analytics |
+
+### Features
+
+- ✅ **Realistic Data**: Names, departments, dates, metrics all randomly generated
+- ✅ **Automatic Upload**: Files uploaded directly to SharePoint Data folder
+- ✅ **Record Counts**: Filenames include record counts (e.g., "Filled Positions (90 records).xlsx")
+- ✅ **Proper Formatting**: Excel files with headers, data types, and formatting
+- ✅ **No Duplicates**: Each run generates fresh data
+
+### When to Use
+
+**Use training data generation when:**
+- 🧪 Testing the MCP server for the first time
+- 📊 Demonstrating analytics capabilities
+- 🎓 Training users on the system
+- 🔍 Validating new features
+
+**Skip if:**
+- ✅ You already have real HR data in SharePoint
+- ✅ You've previously run the generator and have test data
+
+### Expected Output
+
+```
+================================================================================
+TRAINING DATA GENERATOR FOR HR ANALYTICS
+================================================================================
+
+🔄 Generating training datasets...
+
+📊 Generating File 1: Filled Positions (90 records)...
+   ✅ Generated 90 records
+
+📊 Generating File 2: Time In Step Q3 (97 records)...
+   ✅ Generated 97 records
+
+📊 Generating File 3: Recruiting Report (86 records)...
+   ✅ Generated 86 records
+
+📊 Generating File 4: All Departments Report (91 records)...
+   ✅ Generated 91 records
+
+================================================================================
+✅ ALL FILES GENERATED SUCCESSFULLY!
+Total files: 4
+Total records: 364
+Upload location: SharePoint Data folder
+================================================================================
+```
+
+### Detailed Documentation
+
+For complete details about the training data generator, see:
+- **`QUICK_START_TRAINING_DATA.md`** - Quick reference guide
+- **`TRAINING_DATA_GENERATOR_README.md`** - Comprehensive documentation including:
+  - Column definitions for each file
+  - Data generation logic
+  - Customization options
+  - Troubleshooting
+
+### Notes
+
+- **One-time setup**: Only needs to be run once to create test data
+- **Safe to re-run**: Will create new files with different record counts
+- **Requires SharePoint access**: Uses same credentials as MCP server
+- **Data folder**: Files are uploaded to the "Data" folder in SharePoint
+- **Random data**: Each run generates different realistic data
+
+### Status
+
+**Training Data Generator:** ✅ **Available**  
+**Purpose:** Testing and demonstration  
+**Usage:** One-time setup (optional)

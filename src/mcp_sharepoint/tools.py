@@ -9,7 +9,7 @@ from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from .common import logger, mcp, ACCESS_TOKEN, SITE_ID, DRIVE_ID, make_graph_request
 from .resources import list_folders, list_documents, get_document_content, download_document
-from .context_helper import context_helper
+from .context_manager import context_manager
 from .analytics_helper import hr_analytics
 from .visualization_helper import visualization_helper
 from .powerpoint_helper import PowerPointHelper
@@ -472,7 +472,7 @@ async def delete_document(folder_name: str, file_name: str):
 async def get_column_definition_tool(column_name: str):
     """Get definition for a specific Excel column"""
     try:
-        definition = context_helper.get_column_definition(column_name)
+        definition = context_manager.get_column_definition(column_name)
         if definition:
             return {
                 "success": True,
@@ -491,7 +491,7 @@ async def get_column_definition_tool(column_name: str):
 async def search_column_definitions_tool(search_term: str):
     """Search for column definitions containing a specific term"""
     try:
-        results = context_helper.search_definitions(search_term)
+        results = context_manager.search_context(search_term, categories=['columns'])
         return {
             "success": True,
             "search_term": search_term,
@@ -505,7 +505,7 @@ async def search_column_definitions_tool(search_term: str):
 async def get_all_column_definitions_tool():
     """Get all available column definitions"""
     try:
-        definitions = context_helper.get_all_definitions()
+        definitions = context_manager.get_all_column_definitions()
         return {
             "success": True,
             "total_columns": len(definitions),
@@ -518,7 +518,7 @@ async def get_all_column_definitions_tool():
 async def get_matching_columns_tool(column_names: list):
     """Get definitions for columns that exist in the dictionary"""
     try:
-        matching = context_helper.get_matching_columns(column_names)
+        matching = context_manager.get_matching_columns(column_names)
         return {
             "success": True,
             "input_columns": column_names,
@@ -527,6 +527,38 @@ async def get_matching_columns_tool(column_names: list):
         }
     except Exception as e:
         return {"success": False, "message": f"Error getting matching columns: {str(e)}"}
+
+@mcp.tool(name="Get_Context_Summary", description="Get summary of all loaded context files and categories")
+async def get_context_summary_tool():
+    """Get summary of all loaded context files and categories"""
+    try:
+        summary = context_manager.get_context_summary()
+        return {
+            "success": True,
+            "summary": summary
+        }
+    except Exception as e:
+        return {"success": False, "message": f"Error getting context summary: {str(e)}"}
+
+@mcp.tool(name="Search_All_Context", description="Search across all context files for specific information")
+async def search_all_context_tool(search_term: str, categories: list = None):
+    """Search across all context files for specific information
+    
+    Args:
+        search_term: The term to search for
+        categories: Optional list of categories to search in (columns, metrics, business, recruiting)
+    """
+    try:
+        results = context_manager.search_context(search_term, categories)
+        return {
+            "success": True,
+            "search_term": search_term,
+            "categories_searched": categories or "all",
+            "result_count": len(results),
+            "results": results
+        }
+    except Exception as e:
+        return {"success": False, "message": f"Error searching context: {str(e)}"}
 
 # HR Analytics and Data Quality Tools
 @mcp.tool(name="Validate_Excel_Data_Quality", description="Validate data quality and identify issues in Excel HR data")
@@ -799,7 +831,7 @@ async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[st
             columns_in_data = df.columns.tolist()
             column_defs = {}
             for col in columns_in_data[:10]:  # Limit to first 10 columns to fit on slide
-                definition = context_helper.get_column_definition(col)
+                definition = context_manager.get_column_definition(col)
                 if definition:
                     column_defs[col] = definition
             
