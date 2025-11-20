@@ -40,13 +40,14 @@ class PowerPointHelper:
         
         # Add title - centered
         title_box = slide.shapes.add_textbox(
-            Inches(1), Inches(2.5), Inches(8), Inches(1.5)
+            Inches(0.5), Inches(2.5), Inches(9), Inches(2)
         )
         title_frame = title_box.text_frame
         title_frame.text = title
+        title_frame.word_wrap = True
         title_para = title_frame.paragraphs[0]
         title_para.alignment = PP_ALIGN.CENTER
-        title_para.font.size = Pt(44)
+        title_para.font.size = Pt(36)
         title_para.font.bold = True
         title_para.font.color.rgb = self.COLORS['primary']
         
@@ -124,8 +125,17 @@ class PowerPointHelper:
             
             # Format chart
             chart.has_legend = True
-            chart.legend.position = 2  # Right
-            chart.legend.font.size = Pt(10)
+            chart.legend.position = 3  # Bottom - prevents overlap
+            chart.legend.font.size = Pt(9)
+            chart.legend.include_in_layout = False
+            
+            # Format category axis (bar labels) - reduce font size
+            if hasattr(chart, 'category_axis'):
+                chart.category_axis.tick_labels.font.size = Pt(9)
+            
+            # Format value axis
+            if hasattr(chart, 'value_axis'):
+                chart.value_axis.tick_labels.font.size = Pt(9)
             
             return chart
             
