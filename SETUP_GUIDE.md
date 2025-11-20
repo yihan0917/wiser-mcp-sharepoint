@@ -54,6 +54,157 @@ print("✅ All dependencies installed successfully!")
 - ✅ Column context system for HR data
 - ✅ Professional Word document creation
 
+### v0.3.0 - Comprehensive Context Management System 🆕
+- ✅ **Advanced Context Manager** - Intelligent context loading and injection
+- ✅ **22 Context Files** - 123,137 characters of business, HR, and role context
+- ✅ **5 Context Categories** - columns, metrics, business, recruiting, roles
+- ✅ **Tool-Context Mapping** - Automatic context injection based on tool usage
+- ✅ **Role Descriptions** - Complete career paths for Software Engineering, Data Management, Engineering Leadership, ML/DS/DA
+- ✅ **Search & Discovery** - Search across all context files, column definition matching
+- ✅ **Context-Aware Analytics** - AI provides intelligent recommendations based on company context
+
+## Context Management System
+
+### Overview
+
+The SharePoint MCP server includes a comprehensive context management system that provides AI tools with rich business, HR, and organizational context. This enables intelligent, context-aware recommendations and analysis.
+
+### Context Categories
+
+The system organizes context into 5 categories:
+
+#### 1. **Columns** (6,728 chars)
+- `column_definitions.md` - 73 Excel column definitions for HR data
+- Covers job information, personnel data, application tracking, timing metrics, sourcing, and costs
+
+#### 2. **Metrics** (2,661 chars)
+- `metrics_definitions.md` - HR metrics and KPIs
+- Time-to-hire, cost-per-hire, source effectiveness, diversity metrics
+
+#### 3. **Business** (13,832 chars)
+- `company_overview.md` - Company mission, values, history
+- `engineering_overview.md` - Engineering culture, strategy, platforms
+
+#### 4. **Recruiting** (30,093 chars)
+- `hiring_guide.md` - Hiring processes and guidelines
+- `career_path.md` - Career progression framework
+
+#### 5. **Roles** (70,823 chars) - **22 files**
+- **Software Engineering**: `software_engineer_role_description.md` (L1-L8)
+- **Data Management**: `data_management_role_description.md` (L1-L7, 3 tracks)
+- **Engineering Leadership**: `engineering_leadership_role_description.md` (6 levels)
+- **ML/DS/DA Index**: `ml_ds_da_role_description.md`
+- **ML/DS/DA Detailed** (12 files):
+  - `Position-Description-MLE1-DS1.md` - ML Engineer I / Data Scientist I
+  - `Position-Description-DA1.md` - Data Analyst I
+  - `Position-Description-MLE2-DS2.md` - ML Engineer II / Data Scientist II
+  - `Position-Description-DA2.md` - Data Analyst II
+  - `Position-Description-SMLE-SDS.md` - Senior ML Engineer / Senior Data Scientist
+  - `Position-Description-SDA.md` - Senior Data Analyst
+  - `Position-Description-LSMLE-LSDS.md` - Lead Senior ML Engineer / Lead Senior Data Scientist
+  - `Position-Description-LSDA.md` - Lead Senior Data Analyst
+  - `Position-Description-PMLE-PDS.md` - Principal ML Engineer / Principal Data Scientist
+  - `Position-Description-PDA.md` - Principal Data Analyst
+  - `Position-Description-SEMLDS Manager.md` - Software Engineering ML/DS Manager
+  - `Position-Description-Analytics Manager.md` - Analytics Manager
+
+### Tool-Context Mapping
+
+Tools automatically receive relevant context based on their function:
+
+| Tool | Context Categories | Total Context Size |
+|------|-------------------|-------------------|
+| **Analyze_HR_File_Complete** | columns, business, metrics, roles | 93,917 chars |
+| **Calculate_HR_Metrics** | columns, metrics, recruiting, roles | ~85,000 chars |
+| **Validate_Excel_Data_Quality** | columns, recruiting, roles | ~107,000 chars |
+| **Create_PowerPoint_Report** | columns, business, metrics, recruiting, roles | ~123,000 chars |
+| **Create_Excel_With_Charts** | columns, metrics | ~9,400 chars |
+| **Generate_Chart_Data** | columns, metrics | ~9,400 chars |
+
+### Context Files Location
+
+All context files are located in:
+```
+src/mcp_sharepoint/context/
+├── column_definitions.md
+├── metrics_definitions.md
+├── company_overview.md
+├── engineering_overview.md
+├── hiring_guide.md
+├── career_path.md
+├── software_engineer_role_description.md
+├── data_management_role_description.md
+├── engineering_leadership_role_description.md
+├── ml_ds_da_role_description.md
+├── Position-Description-MLE1-DS1.md
+├── Position-Description-DA1.md
+├── Position-Description-MLE2-DS2.md
+├── Position-Description-DA2.md
+├── Position-Description-SMLE-SDS.md
+├── Position-Description-SDA.md
+├── Position-Description-LSMLE-LSDS.md
+├── Position-Description-LSDA.md
+├── Position-Description-PMLE-PDS.md
+├── Position-Description-PDA.md
+├── Position-Description-SEMLDS Manager.md
+└── Position-Description-Analytics Manager.md
+```
+
+### Testing Context System
+
+Test the context manager integration:
+
+```bash
+python test_context_integration.py
+```
+
+**Expected output:**
+```
+✅ All tests passed! Context manager is working correctly.
+✓ Total files loaded: 22
+✓ Total characters: 123,137
+✓ Categories: columns, metrics, business, recruiting, roles
+✓ Column definitions: 73
+```
+
+### Adding New Context Files
+
+To add new context files:
+
+1. **Create markdown file** in `src/mcp_sharepoint/context/`
+2. **Update context_manager.py** - Add file to appropriate category in `CONTEXT_CATEGORIES`
+3. **Update tool mapping** (optional) - Add category to tools in `TOOL_CONTEXT_MAP`
+4. **Test** - Run `test_context_integration.py` to verify
+
+**Example:**
+```python
+# In context_manager.py
+CONTEXT_CATEGORIES = {
+    'roles': [
+        'software_engineer_role_description.md',
+        'your_new_role_file.md',  # ← Add here
+    ]
+}
+```
+
+### Context Manager Features
+
+- ✅ **Automatic Loading** - All markdown files loaded on initialization
+- ✅ **Category-Based Organization** - Context grouped by purpose
+- ✅ **Tool-Specific Injection** - Only relevant context sent to each tool
+- ✅ **Search Functionality** - Search across all context files
+- ✅ **Column Matching** - Match Excel columns to definitions
+- ✅ **Context Summary** - Get statistics on loaded context
+- ✅ **Backward Compatible** - Works with existing tools without changes
+
+### Benefits
+
+1. **Intelligent Recommendations** - AI understands company values, hiring practices, role expectations
+2. **Context-Aware Analysis** - Analysis considers organizational context
+3. **Accurate Role Matching** - Validates job titles against known positions
+4. **Career Path Guidance** - Provides progression insights for employees
+5. **Consistent Terminology** - Uses company-specific definitions and metrics
+
 ## Setup Notes
 
 - **Graph API is recommended** for new implementations due to better reliability
@@ -215,16 +366,48 @@ wiser-mcp-sharepoint/
 ├── .env                    # Your credentials (git ignored)
 ├── .env.example           # Template
 ├── pyproject.toml         # Package configuration
+├── SETUP_GUIDE.md         # This comprehensive setup guide
 ├── src/
 │   └── mcp_sharepoint/
 │       ├── __init__.py
 │       ├── server.py      # Main server entry point
-│       ├── common.py      # Configuration and setup
-│       ├── tools.py       # MCP tools
-│       ├── resources.py   # MCP resources
+│       ├── common.py      # Configuration and Graph API setup
+│       ├── tools.py       # MCP tools (Graph API)
+│       ├── resources.py   # MCP resources (Graph API)
+│       ├── context_manager.py  # Context management system 🆕
+│       ├── analytics_helper.py # HR analytics and metrics
+│       ├── context/       # Context files directory 🆕
+│       │   ├── column_definitions.md
+│       │   ├── metrics_definitions.md
+│       │   ├── company_overview.md
+│       │   ├── engineering_overview.md
+│       │   ├── hiring_guide.md
+│       │   ├── career_path.md
+│       │   ├── software_engineer_role_description.md
+│       │   ├── data_management_role_description.md
+│       │   ├── engineering_leadership_role_description.md
+│       │   ├── ml_ds_da_role_description.md
+│       │   ├── Position-Description-MLE1-DS1.md
+│       │   ├── Position-Description-DA1.md
+│       │   ├── Position-Description-MLE2-DS2.md
+│       │   ├── Position-Description-DA2.md
+│       │   ├── Position-Description-SMLE-SDS.md
+│       │   ├── Position-Description-SDA.md
+│       │   ├── Position-Description-LSMLE-LSDS.md
+│       │   ├── Position-Description-LSDA.md
+│       │   ├── Position-Description-PMLE-PDS.md
+│       │   ├── Position-Description-PDA.md
+│       │   ├── Position-Description-SEMLDS Manager.md
+│       │   └── Position-Description-Analytics Manager.md
 │       └── mcp_sharepoint.egg-info/  # Package metadata (auto-generated)
 ├── venv/                  # Virtual environment
-└── test_auth.py          # Authentication test script
+├── test_auth.py          # Authentication test script
+├── test_graph_auth.py    # Graph API authentication test
+├── test_resources.py     # Integration testing
+├── test_resources_unit.py # Unit testing
+├── test_download_excel.py # Excel download test
+├── test_mcp_tools.py     # MCP tools testing
+└── test_context_integration.py # Context system test 🆕
 ```
 
 ## 7. Testing Graph API Authentication
@@ -1741,16 +1924,26 @@ The system organizes context into 4 categories across 6 markdown files:
 - **Content:** Hiring processes, career frameworks
 - **Used By:** HR metrics, validation tools
 
+#### **5. Roles Context** (`roles`)
+- **Files:** 
+  - `software_engineer_role_description.md` - Software engineering career ladder (L1-L6)
+  - `data_management_role_description.md` - Data engineering career paths
+  - `engineering_leadership_role_description.md` - Engineering management track
+  - `ml_ds_da_role_description.md` - ML/DS/DA role descriptions (references PDFs)
+- **Content:** Role descriptions, career progression, expectations by level
+- **Used By:** HR analytics, recruiting analysis, workforce planning tools
+- **Note:** ML/DS/DA roles reference PDF files in the same context folder for detailed descriptions
+
 ### Tool-Context Mapping
 
 Each tool automatically receives relevant context:
 
 | Tool | Context Categories | What It Gets |
 |------|-------------------|--------------|
-| **Analyze_HR_File_Complete** | columns, business, metrics | Column defs + company values + KPI definitions |
-| **Calculate_HR_Metrics** | columns, metrics, recruiting | Column defs + metrics + hiring guidelines |
-| **Validate_Excel_Data_Quality** | columns, recruiting | Column defs + hiring best practices |
-| **Create_PowerPoint_Report** | columns, business, metrics, recruiting | All context for comprehensive reports |
+| **Analyze_HR_File_Complete** | columns, business, metrics, roles | Column defs + company values + KPIs + role descriptions |
+| **Calculate_HR_Metrics** | columns, metrics, recruiting, roles | Column defs + metrics + hiring guidelines + role info |
+| **Validate_Excel_Data_Quality** | columns, recruiting, roles | Column defs + hiring best practices + role expectations |
+| **Create_PowerPoint_Report** | columns, business, metrics, recruiting, roles | All context for comprehensive reports |
 | **Create_Excel_With_Charts** | columns, metrics | Column defs + chart guidance |
 | **Generate_Chart_Data** | columns, metrics | Column defs + visualization guidance |
 
@@ -1764,9 +1957,9 @@ Get summary of all loaded context files and categories
 {
   "success": true,
   "summary": {
-    "total_files": 6,
-    "total_characters": 53138,
-    "categories": ["columns", "metrics", "business", "recruiting"],
+    "total_files": 10,
+    "total_characters": 92391,
+    "categories": ["columns", "metrics", "business", "recruiting", "roles"],
     "column_definitions_count": 73
   }
 }
@@ -1842,9 +2035,9 @@ python test_context_integration.py
 
 **Expected output:**
 ```
-✓ Total files loaded: 6
-✓ Total characters: 53,138
-✓ Categories: columns, metrics, business, recruiting
+✓ Total files loaded: 10
+✓ Total characters: 92,391
+✓ Categories: columns, metrics, business, recruiting, roles
 ✓ Column definitions: 73
 ✓ Context for tools: Working
 ✓ Column matching: Working
@@ -1905,12 +2098,17 @@ To add new context files:
 All context files are stored in:
 ```
 src/mcp_sharepoint/context/
-├── column_definitions.md      # Excel column definitions
-├── metrics_definitions.md     # HR metrics and KPIs
-├── company_overview.md        # Company mission and values
-├── engineering_overview.md    # Engineering culture
-├── hiring_guide.md           # Hiring processes
-└── career_path.md            # Career frameworks
+├── column_definitions.md                      # Excel column definitions
+├── metrics_definitions.md                     # HR metrics and KPIs
+├── company_overview.md                        # Company mission and values
+├── engineering_overview.md                    # Engineering culture
+├── hiring_guide.md                           # Hiring processes
+├── career_path.md                            # Career frameworks
+├── software_engineer_role_description.md      # Software engineering career ladder
+├── data_management_role_description.md        # Data engineering career paths
+├── engineering_leadership_role_description.md # Engineering management track
+├── ml_ds_da_role_description.md              # ML/DS/DA role descriptions
+└── Position-Description-*.pdf                 # Detailed role descriptions (12 PDFs)
 ```
 
 ### Migration Notes
@@ -1932,7 +2130,8 @@ The old `context_helper.py` has been removed. All tools now use `context_manager
 ### Status
 
 **Context System:** ✅ **Production Ready**  
-**Files Loaded:** 6 context files  
+**Files Loaded:** 10 markdown files + 12 PDF files  
+**Categories:** 5 (columns, metrics, business, recruiting, roles)  
 **Column Definitions:** 73 parsed definitions  
 **Integration:** Complete
 

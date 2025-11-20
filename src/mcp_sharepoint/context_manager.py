@@ -15,15 +15,38 @@ class ContextManager:
         'columns': ['column_definitions.md'],
         'metrics': ['metrics_definitions.md'],
         'business': ['company_overview.md', 'engineering_overview.md'],
-        'recruiting': ['hiring_guide.md', 'career_path.md']
+        'recruiting': ['hiring_guide.md', 'career_path.md'],
+        'roles': [
+            # Software Engineering roles
+            'software_engineer_role_description.md',
+            # Data Management roles
+            'data_management_role_description.md',
+            # Engineering Leadership roles
+            'engineering_leadership_role_description.md',
+            # ML/DS/DA roles - Index
+            'ml_ds_da_role_description.md',
+            # ML/DS/DA roles - Detailed descriptions
+            'Position-Description-MLE1-DS1.md',
+            'Position-Description-DA1.md',
+            'Position-Description-MLE2-DS2.md',
+            'Position-Description-DA2.md',
+            'Position-Description-SMLE-SDS.md',
+            'Position-Description-SDA.md',
+            'Position-Description-LSMLE-LSDS.md',
+            'Position-Description-LSDA.md',
+            'Position-Description-PMLE-PDS.md',
+            'Position-Description-PDA.md',
+            'Position-Description-SEMLDS Manager.md',
+            'Position-Description-Analytics Manager.md'
+        ]
     }
     
     # Map tools to the context categories they need
     TOOL_CONTEXT_MAP = {
-        'Analyze_HR_File_Complete': ['columns', 'business', 'metrics'],
-        'Calculate_HR_Metrics': ['columns', 'metrics', 'recruiting'],
-        'Validate_Excel_Data_Quality': ['columns', 'recruiting'],
-        'Create_PowerPoint_Report': ['columns', 'business', 'metrics', 'recruiting'],
+        'Analyze_HR_File_Complete': ['columns', 'business', 'metrics', 'roles'],
+        'Calculate_HR_Metrics': ['columns', 'metrics', 'recruiting', 'roles'],
+        'Validate_Excel_Data_Quality': ['columns', 'recruiting', 'roles'],
+        'Create_PowerPoint_Report': ['columns', 'business', 'metrics', 'recruiting', 'roles'],
         'Create_Excel_With_Charts': ['columns', 'metrics'],
         'Generate_Chart_Data': ['columns', 'metrics'],
         'Get_Document_Content': ['columns'],
