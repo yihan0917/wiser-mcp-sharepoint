@@ -109,13 +109,19 @@ class PowerPointHelper:
             chart_data_obj.categories = labels
             chart_data_obj.add_series('', values)
             
-            # Determine chart type
+            # Determine chart type and y-axis title
             if chart_type in ['source_effectiveness', 'department_hiring']:
                 xl_chart_type = XL_CHART_TYPE.PIE
+                y_axis_title = None  # Pie charts don't have y-axis
             elif chart_type == 'hiring_trends':
                 xl_chart_type = XL_CHART_TYPE.LINE
+                y_axis_title = 'Number of Hires'
+            elif chart_type == 'time_to_hire':
+                xl_chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
+                y_axis_title = 'Days'
             else:
                 xl_chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
+                y_axis_title = 'Count'
             
             # Add chart to slide
             chart = slide.shapes.add_chart(
@@ -123,22 +129,30 @@ class PowerPointHelper:
                 Inches(width), Inches(height), chart_data_obj
             ).chart
             
-            # Format chart
+            # Format chart legend - smaller font, positioned at bottom
             chart.has_legend = True
-            chart.legend.position = 4  # Right side - prevents overlap with chart area
-            chart.legend.font.size = Pt(8)
+            if xl_chart_type == XL_CHART_TYPE.PIE:
+                chart.legend.position = 3  # Bottom for pie charts
+            else:
+                chart.legend.position = 3  # Bottom for all charts
+            chart.legend.font.size = Pt(9)  # Smaller legend font
             chart.legend.include_in_layout = False
             
-            # Format category axis (bar labels) - reduce font size significantly
+            # Format category axis (x-axis labels) - smaller font
             if hasattr(chart, 'category_axis'):
-                chart.category_axis.tick_labels.font.size = Pt(7)
+                chart.category_axis.tick_labels.font.size = Pt(9)  # Smaller x-axis labels
                 # Rotate labels if too many categories
                 if len(labels) > 8:
                     chart.category_axis.tick_labels.orientation = -45
             
-            # Format value axis
-            if hasattr(chart, 'value_axis'):
-                chart.value_axis.tick_labels.font.size = Pt(8)
+            # Format value axis (y-axis) with title
+            if hasattr(chart, 'value_axis') and y_axis_title:
+                chart.value_axis.tick_labels.font.size = Pt(9)
+                # Add y-axis title
+                chart.value_axis.has_title = True
+                chart.value_axis.axis_title.text_frame.text = y_axis_title
+                chart.value_axis.axis_title.text_frame.paragraphs[0].font.size = Pt(11)
+                chart.value_axis.axis_title.text_frame.paragraphs[0].font.bold = True
             
             return chart
             
