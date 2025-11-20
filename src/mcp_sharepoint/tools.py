@@ -753,7 +753,7 @@ async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[st
     try:
         # Set default folders if not specified
         if folder_name is None:
-            folder_name = "Data"
+            folder_name = "Recruiting Data"
         if output_folder is None:
             output_folder = "AI Generated Reports"
         
