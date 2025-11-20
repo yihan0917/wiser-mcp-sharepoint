@@ -125,17 +125,20 @@ class PowerPointHelper:
             
             # Format chart
             chart.has_legend = True
-            chart.legend.position = 3  # Bottom - prevents overlap
-            chart.legend.font.size = Pt(9)
+            chart.legend.position = 4  # Right side - prevents overlap with chart area
+            chart.legend.font.size = Pt(8)
             chart.legend.include_in_layout = False
             
-            # Format category axis (bar labels) - reduce font size
+            # Format category axis (bar labels) - reduce font size significantly
             if hasattr(chart, 'category_axis'):
-                chart.category_axis.tick_labels.font.size = Pt(9)
+                chart.category_axis.tick_labels.font.size = Pt(7)
+                # Rotate labels if too many categories
+                if len(labels) > 8:
+                    chart.category_axis.tick_labels.orientation = -45
             
             # Format value axis
             if hasattr(chart, 'value_axis'):
-                chart.value_axis.tick_labels.font.size = Pt(9)
+                chart.value_axis.tick_labels.font.size = Pt(8)
             
             return chart
             
@@ -203,10 +206,10 @@ class PowerPointHelper:
         """Create slide with chart and insights"""
         slide = self.create_content_slide(title)
         
-        # Add chart on left side (avoid overlap)
+        # Add chart on left side with more space for legend
         self.add_chart_to_slide(
             slide, chart_data, chart_type,
-            left=0.5, top=1.2, width=5.5, height=4.5
+            left=0.5, top=1.2, width=5.0, height=4.8
         )
         
         # Add insights on right side (avoid overlap)
