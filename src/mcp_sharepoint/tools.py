@@ -211,11 +211,159 @@ def _generate_recommendations(validation_results: dict, metrics: dict) -> list:
         return []
 
 def _generate_chart_insights(analysis: Dict, chart_type: str, chart_data: Dict) -> List[str]:
-    """Generate comprehensive insights for a specific chart by analyzing patterns in the data"""
+    """Generate comprehensive insights for a specific chart by analyzing patterns in the data
+    
+    Now includes context-aware insights using:
+    - analysis['context']: Full tool context (columns, business, metrics, recruiting, roles)
+    - analysis['column_definitions']: Specific column definitions from the dataset
+    - analysis['data_summary']: Basic data statistics
+    """
     insights = []
     
+    # Extract context for intelligent insights
+    context = analysis.get('context', '')
+    column_defs = analysis.get('column_definitions', {})
+    data_summary = analysis.get('data_summary', {})
+    
     try:
-        if chart_type == 'source_effectiveness':
+        if chart_type == 'time_by_step':
+            # Time by recruiting step insights
+            labels = chart_data.get('labels', [])
+            values = chart_data.get('values', [])
+            
+            if labels and values:
+                # Find longest step
+                max_time = max(values)
+                max_step = labels[values.index(max_time)]
+                avg_time = sum(values) / len(values)
+                total_time = sum(values)
+                
+                insights.append(f"Longest step: '{max_step}' averaging {max_time} days")
+                insights.append(f"Total average time across all steps: {round(total_time, 1)} days")
+                
+                # Bottleneck analysis
+                if max_time > avg_time * 2:
+                    insights.append(f"⚠️ '{max_step}' is a bottleneck - {round(max_time/avg_time, 1)}x longer than average")
+                    insights.append(f"🎯 Recommendation: Focus on streamlining '{max_step}' to reduce overall time-to-hire")
+                
+                # Quick wins
+                quick_steps = [(labels[i], values[i]) for i in range(len(labels)) if values[i] < avg_time * 0.5]
+                if quick_steps:
+                    insights.append(f"✅ {len(quick_steps)} steps are efficient (< 50% of average)")
+                
+                # Context-aware insight
+                if 'technical interview' in max_step.lower() or 'interview' in max_step.lower():
+                    insights.append("💡 Consider: Async technical assessments or standardized interview rubrics")
+        
+        elif chart_type == 'role_distribution':
+            # Role distribution insights
+            labels = chart_data.get('labels', [])
+            values = chart_data.get('values', [])
+            
+            if labels and values:
+                total = sum(values)
+                top_role = labels[0]
+                top_count = values[0]
+                top_pct = round((top_count / total * 100), 1)
+                
+                insights.append(f"Top role: '{top_role}' with {top_count} positions ({top_pct}%)")
+                
+                # Technical role analysis
+                tech_roles = [labels[i] for i in range(len(labels)) if any(kw in labels[i].lower() for kw in ['engineer', 'data', 'analyst', 'scientist', 'developer'])]
+                if tech_roles:
+                    tech_count = sum([values[i] for i in range(len(labels)) if labels[i] in tech_roles])
+                    tech_pct = round((tech_count / total * 100), 1)
+                    insights.append(f"💻 Technical roles: {len(tech_roles)} types, {tech_count} positions ({tech_pct}%)")
+                
+                # Diversity of roles
+                insights.append(f"Total role types: {len(labels)}")
+                if len(labels) > 10:
+                    insights.append(f"✅ Good role diversity - hiring across {len(labels)} different positions")
+                
+                # Context-aware: Reference role descriptions if available
+                if context and 'role' in context.lower():
+                    insights.append("📋 Hiring aligned with defined career paths and role frameworks")
+        
+        elif chart_type == 'location_distribution':
+            # Location distribution insights
+            labels = chart_data.get('labels', [])
+            values = chart_data.get('values', [])
+            
+            if labels and values:
+                total = sum(values)
+                top_location = labels[0]
+                top_count = values[0]
+                top_pct = round((top_count / total * 100), 1)
+                
+                insights.append(f"Top location: {top_location} with {top_count} hires ({top_pct}%)")
+                
+                # Geographic diversity
+                insights.append(f"Hiring across {len(labels)} locations")
+                if len(labels) >= 4:
+                    insights.append(f"✅ Strong geographic distribution - global talent acquisition")
+                
+                # Concentration analysis
+                if top_pct > 60:
+                    insights.append(f"⚠️ High concentration in {top_location} - consider expanding other markets")
+                elif top_pct < 40:
+                    insights.append(f"✅ Balanced distribution - no single location dominates")
+                
+                # Context-aware: Business expansion
+                if context and any(loc in context for loc in ['US', 'Canada', 'Brazil', 'India']):
+                    insights.append("🌍 Hiring supports multi-region business strategy")
+        
+        elif chart_type == 'time_distribution':
+            # Total time-to-hire distribution
+            labels = chart_data.get('labels', [])
+            values = chart_data.get('values', [])
+            
+            if labels and values:
+                total_positions = sum(values)
+                
+                # Categorize by speed
+                fast_count = sum([values[i] for i in range(len(labels)) if '0-30' in labels[i] or '1-30' in labels[i]])
+                optimal_count = sum([values[i] for i in range(len(labels)) if '31-60' in labels[i] or '60' in labels[i]])
+                slow_count = sum([values[i] for i in range(len(labels)) if '90' in labels[i] or '120' in labels[i] or '180' in labels[i]])
+                
+                if fast_count > 0:
+                    fast_pct = round((fast_count / total_positions * 100), 1)
+                    insights.append(f"⚡ {fast_pct}% filled in under 30 days - excellent speed")
+                
+                if optimal_count > 0:
+                    optimal_pct = round((optimal_count / total_positions * 100), 1)
+                    insights.append(f"✅ {optimal_pct}% in optimal 30-60 day range")
+                
+                if slow_count > 0:
+                    slow_pct = round((slow_count / total_positions * 100), 1)
+                    insights.append(f"⚠️ {slow_pct}% taking 90+ days - improvement opportunity")
+                    if slow_pct > 30:
+                        insights.append(f"🎯 Priority: Reduce slow fills through process optimization")
+                
+                insights.append(f"Total positions analyzed: {total_positions}")
+        
+        elif chart_type == 'department_distribution':
+            # Department distribution insights
+            labels = chart_data.get('labels', [])
+            values = chart_data.get('values', [])
+            
+            if labels and values:
+                total = sum(values)
+                top_dept = labels[0]
+                top_count = values[0]
+                top_pct = round((top_count / total * 100), 1)
+                
+                insights.append(f"Top department: {top_dept} with {top_count} hires ({top_pct}%)")
+                insights.append(f"Hiring across {len(labels)} departments")
+                
+                # Growth areas
+                if 'engineering' in top_dept.lower() or 'it' in top_dept.lower():
+                    insights.append(f"💻 Tech-focused hiring - aligns with digital transformation")
+                
+                # Balance
+                if top_pct < 40:
+                    insights.append(f"✅ Balanced hiring across departments")
+        
+        elif chart_type == 'source_effectiveness':
             # Source analysis insights
             labels = chart_data.get('labels', [])
             values = chart_data.get('values', [])
@@ -767,10 +915,31 @@ async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[st
         if df.empty:
             return {"success": False, "message": "No data found in Excel file"}
         
-        # Perform analysis
+        # Get relevant context for this tool (columns, business, metrics, recruiting, roles)
+        tool_context = context_manager.get_context_for_tool('Create_PowerPoint_Report')
+        
+        # Get column definitions for columns in the dataset
+        columns_in_data = df.columns.tolist()
+        column_definitions = {}
+        for col in columns_in_data:
+            definition = context_manager.get_column_definition(col)
+            if definition:
+                column_definitions[col] = definition
+        
+        # Perform analysis with context
         validation_results = hr_analytics.validate_data_quality(df)
         metrics = hr_analytics.calculate_hiring_metrics(df)
-        analysis = {'validation': validation_results, 'metrics': metrics}
+        analysis = {
+            'validation': validation_results, 
+            'metrics': metrics,
+            'context': tool_context,
+            'column_definitions': column_definitions,
+            'data_summary': {
+                'total_rows': len(df),
+                'total_columns': len(df.columns),
+                'columns': columns_in_data
+            }
+        }
         
         # Create PowerPoint presentation
         ppt = PowerPointHelper()
@@ -780,22 +949,32 @@ async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[st
             presentation_title = "HR Recruiting Analytics Report"
         ppt.create_title_slide(presentation_title)
         
-        # Chart slides with insights
+        # Chart slides with insights - dynamically generated based on available data
         chart_types = [
             {
-                'type': 'source_effectiveness',
-                'title': 'Candidate Source Distribution',
-                'insights_key': 'source_analysis'
+                'type': 'time_by_step',
+                'title': 'Time Spent in Each Recruiting Step',
+                'insights_key': 'time_analysis'
             },
             {
-                'type': 'hiring_trends',
-                'title': 'Monthly Hiring Trends',
-                'insights_key': 'hiring_trends'
+                'type': 'role_distribution',
+                'title': 'Hiring by Role',
+                'insights_key': 'role_analysis'
             },
             {
-                'type': 'time_to_hire_distribution',
-                'title': 'Time-to-Hire Distribution',
-                'insights_key': 'time_to_hire'
+                'type': 'location_distribution',
+                'title': 'Hiring by Location',
+                'insights_key': 'location_analysis'
+            },
+            {
+                'type': 'time_distribution',
+                'title': 'Total Time-to-Hire Distribution',
+                'insights_key': 'time_distribution'
+            },
+            {
+                'type': 'department_distribution',
+                'title': 'Hiring by Department',
+                'insights_key': 'department_analysis'
             }
         ]
         
@@ -824,22 +1003,6 @@ async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[st
             except Exception as e:
                 logger.error(f"Error creating slide for {chart_config['type']}: {e}")
                 continue
-        
-        # Data definitions slide
-        try:
-            # Get column definitions for columns in the dataset
-            columns_in_data = df.columns.tolist()
-            column_defs = {}
-            for col in columns_in_data[:10]:  # Limit to first 10 columns to fit on slide
-                definition = context_manager.get_column_definition(col)
-                if definition:
-                    column_defs[col] = definition
-            
-            if column_defs:
-                ppt.create_data_definitions_slide(column_defs)
-                slides_created += 1
-        except Exception as e:
-            logger.error(f"Error creating data definitions slide: {e}")
         
         # Save PowerPoint to bytes
         pptx_bytes = ppt.save_to_bytes()

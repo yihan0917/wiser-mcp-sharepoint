@@ -54,7 +54,7 @@ print("✅ All dependencies installed successfully!")
 - ✅ Column context system for HR data
 - ✅ Professional Word document creation
 
-### v0.3.0 - Comprehensive Context Management System 🆕
+### v0.3.0 - Comprehensive Context Management System
 - ✅ **Advanced Context Manager** - Intelligent context loading and injection
 - ✅ **22 Context Files** - 123,137 characters of business, HR, and role context
 - ✅ **5 Context Categories** - columns, metrics, business, recruiting, roles
@@ -62,6 +62,62 @@ print("✅ All dependencies installed successfully!")
 - ✅ **Role Descriptions** - Complete career paths for Software Engineering, Data Management, Engineering Leadership, ML/DS/DA
 - ✅ **Search & Discovery** - Search across all context files, column definition matching
 - ✅ **Context-Aware Analytics** - AI provides intelligent recommendations based on company context
+
+### v0.4.0 - Dynamic Column Detection & Context-Driven Analysis 🆕
+- ✅ **Zero Hardcoded Column Names** - Works with ANY HR dataset structure
+- ✅ **Intelligent Column Detection** - Auto-categorizes columns into 9 types (date, time_step, role, location, person, department, numeric, categorical, id)
+- ✅ **Pattern-Based Recognition** - Detects column purpose from names and content
+- ✅ **Dynamic Metrics Calculation** - Generates appropriate metrics based on available data
+- ✅ **Flexible Chart Generation** - Creates visualizations from detected column types
+- ✅ **Context-Integrated Insights** - Full 123K chars of context injected into analysis process
+- ✅ **Business-Aware Recommendations** - AI references role descriptions, hiring guides, and career paths
+- ✅ **Removed Definition Slides** - Context used for intelligent analysis, not just display
+- ✅ **5 New Chart Types** - time_by_step, role_distribution, location_distribution, time_distribution, department_distribution
+
+#### Key Improvements in v0.4.0
+
+**1. Dynamic Column Detection (`analytics_helper.py`)**
+```python
+def detect_column_types(df) -> Dict[str, List[str]]:
+    """Intelligently categorizes columns without hardcoded names"""
+    # Returns: {
+    #   'time_step_columns': [...],  # Numeric columns with 'time' in name
+    #   'role_columns': [...],        # Columns matching role patterns
+    #   'location_columns': [...],    # Columns matching location patterns
+    #   ...
+    # }
+```
+
+**2. Context Integration (`tools.py`)**
+```python
+# Get full context (123K chars) for the tool
+tool_context = context_manager.get_context_for_tool('Create_PowerPoint_Report')
+
+# Get column definitions for actual columns in dataset
+column_definitions = {col: context_manager.get_column_definition(col) 
+                     for col in df.columns}
+
+# Pass context to analysis
+analysis = {
+    'metrics': metrics,
+    'context': tool_context,           # ← Full business context
+    'column_definitions': column_definitions,  # ← Column explanations
+    'data_summary': {...}
+}
+```
+
+**3. Context-Aware Insights**
+- Insights now reference role descriptions, hiring guides, and career frameworks
+- Recommendations aligned with company values and business strategy
+- Technical role analysis considers ML/DS/DA position descriptions
+- Location analysis references multi-region business strategy
+
+**4. Flexibility Benefits**
+- ✅ Works with time-in-step data (e.g., "Time in Application Status: In-Review")
+- ✅ Works with traditional HR data (e.g., "Total Days Open")
+- ✅ Works with custom column names from any ATS or HRIS system
+- ✅ No code changes needed when column names change
+- ✅ Automatically adapts to new data structures
 
 ## Context Management System
 
@@ -204,6 +260,85 @@ CONTEXT_CATEGORIES = {
 3. **Accurate Role Matching** - Validates job titles against known positions
 4. **Career Path Guidance** - Provides progression insights for employees
 5. **Consistent Terminology** - Uses company-specific definitions and metrics
+
+## Architecture: Dynamic Analysis + Context Integration
+
+### Two-Layer Intelligence System
+
+The SharePoint MCP server uses a two-layer approach for intelligent HR analytics:
+
+#### **Layer 1: Dynamic Data Analysis** (`analytics_helper.py`)
+- **No hardcoded column names** - Works with any dataset structure
+- **Pattern-based detection** - Identifies column types from names and content
+- **Automatic type conversion** - Converts dates, numbers, and text appropriately
+- **Flexible metrics** - Calculates metrics based on available columns
+- **Adaptive charts** - Generates visualizations from detected data
+
+**Key Methods:**
+- `detect_column_types(df)` - Categorizes columns into 9 types
+- `calculate_hiring_metrics(df)` - Dynamic metric calculation
+- `generate_chart_data(df, chart_type)` - Flexible chart generation
+
+#### **Layer 2: Context-Aware Insights** (`tools.py`)
+- **Context injection** - Loads 123K chars of business context
+- **Column definition lookup** - Matches columns to known definitions
+- **Business-aligned recommendations** - References role descriptions and hiring guides
+- **Organizational perspective** - Insights consider company values and strategy
+
+**Integration Flow:**
+```
+1. Load Excel data → Parse into DataFrame
+2. Get tool context → Load relevant context files (123K chars)
+3. Get column definitions → Match actual columns to definitions
+4. Detect column types → Categorize without hardcoding
+5. Calculate metrics → Use detected columns dynamically
+6. Generate charts → Create visualizations from available data
+7. Generate insights → Combine data patterns + business context
+8. Create PowerPoint → Context-aware presentation
+```
+
+### Why This Architecture?
+
+**Separation of Concerns:**
+- `analytics_helper.py` = Pure data analysis (no business logic)
+- `tools.py` = Business logic (combines analysis + context)
+
+**Benefits:**
+- ✅ Analytics work with ANY dataset (no column name requirements)
+- ✅ Context enriches insights (not required for basic analysis)
+- ✅ Easy to test (analytics can be tested independently)
+- ✅ Maintainable (context changes don't affect core analytics)
+- ✅ Extensible (add new context without changing analytics)
+
+### Example: How It Works
+
+**Your Data:**
+```
+Columns: "Time in Application Status: In-Review/Recruiter Screen", "Job Title", "Job Country"
+```
+
+**Layer 1 (Dynamic Detection):**
+```python
+detect_column_types(df) returns:
+{
+  'time_step_columns': ['Time in Application Status: In-Review/Recruiter Screen'],
+  'role_columns': ['Job Title'],
+  'location_columns': ['Job Country']
+}
+```
+
+**Layer 2 (Context Integration):**
+```python
+tool_context includes:
+- Position-Description-DA1.md: "Data Analyst I responsibilities..."
+- hiring_guide.md: "Recruiting process best practices..."
+- career_path.md: "L1-L8 progression framework..."
+
+Insights generated:
+"💻 Technical roles: 3 types, 45 positions (46.4%)"
+"📋 Hiring aligned with defined career paths and role frameworks"
+"🎯 Recommendation: Focus on streamlining 'In-Review/Recruiter Screen' step"
+```
 
 ## Setup Notes
 
