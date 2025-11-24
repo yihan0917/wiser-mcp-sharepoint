@@ -63,7 +63,7 @@ print("✅ All dependencies installed successfully!")
 - ✅ **Search & Discovery** - Search across all context files, column definition matching
 - ✅ **Context-Aware Analytics** - AI provides intelligent recommendations based on company context
 
-### v0.4.0 - Dynamic Column Detection & Context-Driven Analysis 🆕
+### v0.4.0 - Dynamic Column Detection & Context-Driven Analysis
 - ✅ **Zero Hardcoded Column Names** - Works with ANY HR dataset structure
 - ✅ **Intelligent Column Detection** - Auto-categorizes columns into 9 types (date, time_step, role, location, person, department, numeric, categorical, id)
 - ✅ **Pattern-Based Recognition** - Detects column purpose from names and content
@@ -73,6 +73,18 @@ print("✅ All dependencies installed successfully!")
 - ✅ **Business-Aware Recommendations** - AI references role descriptions, hiring guides, and career paths
 - ✅ **Removed Definition Slides** - Context used for intelligent analysis, not just display
 - ✅ **5 New Chart Types** - time_by_step, role_distribution, location_distribution, time_distribution, department_distribution
+
+### v0.5.0 - AI-Driven Insights Architecture 🆕
+- ✅ **Hybrid Analysis Model** - Pre-calculated metrics as reference + raw data for AI creativity
+- ✅ **Enhanced Tool Outputs** - Tools now return structured data + raw summaries + business context
+- ✅ **AI-Empowered Analysis** - AI can discover patterns beyond pre-defined metrics
+- ✅ **Data Preview Access** - Tools provide 10-15 row samples for AI pattern examination
+- ✅ **Statistical Summaries** - Mean, median, std, min, max, quartiles for all numeric columns
+- ✅ **Categorical Distributions** - Value counts for categorical columns (top 15-20 values)
+- ✅ **Context-Aware Guidance** - Explicit instructions for AI to think creatively
+- ✅ **Flexible Recommendations** - AI generates custom insights based on actual data patterns
+- ✅ **Business Context Integration** - 2000-3000 chars of context per tool call
+- ✅ **Column Definition Matching** - Automatic lookup of column meanings from context files
 
 #### Key Improvements in v0.4.0
 
@@ -118,6 +130,120 @@ analysis = {
 - ✅ Works with custom column names from any ATS or HRIS system
 - ✅ No code changes needed when column names change
 - ✅ Automatically adapts to new data structures
+
+#### Key Improvements in v0.5.0
+
+**1. Hybrid Analysis Architecture**
+
+The v0.5.0 release transforms MCP tools from **constrained calculators** to **AI-empowered analysis platforms**:
+
+**Before (Constrained):**
+```json
+{
+  "metrics": {
+    "average_time": 75,
+    "total_positions": 97
+  }
+}
+```
+❌ AI could only report: "Average time is 75 days"
+
+**After (AI-Empowered):**
+```json
+{
+  "pre_calculated_metrics": { /* your metrics as reference */ },
+  "data_summary": {
+    "data_preview": [/* actual rows */],
+    "numeric_summaries": {/* stats for each column */},
+    "categorical_distributions": {/* value counts */}
+  },
+  "context": {
+    "column_definitions": {/* what columns mean */},
+    "business_context": "/* hiring guide, company info */",
+    "analysis_guidance": "/* instructions to think creatively */"
+  }
+}
+```
+✅ AI can discover: "Engineering roles average 120 days vs 45 for Sales. Technical Interview step shows high variability (3-20 days). Manager 'John Smith' consistently fills positions 30% faster."
+
+**2. Enhanced Tool Outputs**
+
+Both `Calculate_HR_Metrics` and `Analyze_HR_File_Complete` now return:
+
+- **Pre-calculated metrics** - Your Python code's trusted baseline calculations (as REFERENCE)
+- **Raw data summaries** - Statistical summaries, distributions, data preview for AI analysis
+- **Business context** - 2000-3000 chars from context manager (hiring guides, role descriptions, etc.)
+- **Column definitions** - Automatic lookup of what each column means
+- **Analysis guidance** - Explicit instructions for AI to think beyond pre-defined metrics
+
+**3. What This Enables**
+
+**Your metrics provide the foundation. AI builds the insights.**
+
+- ✅ **Consistency:** Pre-calculated metrics ensure accuracy
+- ✅ **Creativity:** AI discovers patterns you didn't anticipate  
+- ✅ **Context-awareness:** Recommendations aligned with your business practices
+- ✅ **Adaptability:** Works with any data structure automatically
+- ✅ **Extensibility:** Add new metrics anytime; AI uses them as reference
+
+**Example:**
+- Pre-calculated metric: "Average time-to-hire: 95 days"
+- AI discovers: "Technical Interview varies 3-20 days (high variability)"
+- AI correlates: "Senior Engineering roles take 40% longer at Final Interview"
+- AI recommends (context-aware): "Based on your L5+ career path requirements, consider standardized panel interviews"
+- AI identifies: "August approvals fill faster than September (vacation impact?)"
+
+**4. Tool-Specific Enhancements**
+
+**`Calculate_HR_Metrics`:**
+```python
+# Now returns:
+{
+  "pre_calculated_metrics": {...},      # Your baseline metrics
+  "data_summary": {
+    "data_preview": [...],              # 10 rows for pattern examination
+    "numeric_summaries": {...},         # Stats for all numeric columns
+    "categorical_distributions": {...}  # Top 20 values per category
+  },
+  "context": {
+    "column_definitions": {...},        # Column meanings
+    "business_context": "...",          # 2000 chars of context
+    "analysis_guidance": "..."          # Instructions for AI
+  }
+}
+```
+
+**`Analyze_HR_File_Complete`:**
+```python
+# Now returns:
+{
+  "data_summary": {
+    "data_preview": [...],              # 15 rows for deeper analysis
+    "numeric_summaries": {...},
+    "categorical_distributions": {...}
+  },
+  "pre_calculated_analysis": {
+    "data_quality": {...},              # Your validation results
+    "hr_metrics": {...},                # Your calculated metrics
+    "suggested_charts": [...],          # Your chart suggestions
+    "basic_recommendations": [...]      # Your rule-based recommendations
+  },
+  "context": {
+    "column_definitions": {...},
+    "business_context": "...",          # 3000 chars of context
+    "analysis_guidance": "..."          # Creative thinking instructions
+  }
+}
+```
+
+**5. Documentation**
+
+See `AI_INSIGHTS_ARCHITECTURE.md` for complete details on:
+- Architecture philosophy and design principles
+- Before/after comparisons with examples
+- Real-world usage scenarios
+- Best practices for tool development
+- Future enhancement suggestions
 
 ## Context Management System
 
@@ -579,6 +705,7 @@ wiser-mcp-sharepoint/
 ├── .env.example           # Template
 ├── pyproject.toml         # Package configuration
 ├── SETUP_GUIDE.md         # This comprehensive setup guide
+├── AI_INSIGHTS_ARCHITECTURE.md  # v0.5.0 AI-driven insights documentation 🆕
 ├── src/
 │   └── mcp_sharepoint/
 │       ├── __init__.py

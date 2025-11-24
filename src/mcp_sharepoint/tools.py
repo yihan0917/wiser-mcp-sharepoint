@@ -735,9 +735,13 @@ async def validate_excel_data_quality_tool(folder_name: str, file_name: str):
     except Exception as e:
         return {"success": False, "message": f"Error validating data quality: {str(e)}"}
 
-@mcp.tool(name="Calculate_HR_Metrics", description="Calculate comprehensive HR and recruiting metrics from Excel data")
+@mcp.tool(name="Calculate_HR_Metrics", description="Calculate comprehensive HR and recruiting metrics from Excel data. Returns pre-calculated metrics as REFERENCE, plus raw data summary and column context to enable AI-driven insights beyond pre-defined metrics.")
 async def calculate_hr_metrics_tool(folder_name: str, file_name: str):
-    """Calculate comprehensive HR and recruiting metrics from Excel data"""
+    """Calculate comprehensive HR and recruiting metrics from Excel data
+    
+    Returns both pre-calculated metrics (as reference/context) AND raw data summaries
+    to allow AI to discover additional insights and patterns not captured by pre-defined metrics.
+    """
     try:
         # Get the Excel content
         content_result = get_document_content(folder_name, file_name)
@@ -749,17 +753,67 @@ async def calculate_hr_metrics_tool(folder_name: str, file_name: str):
         if df.empty:
             return {"success": False, "message": "No data found in Excel file"}
         
-        # Calculate metrics
+        # Calculate pre-defined metrics (as reference)
         metrics = hr_analytics.calculate_hiring_metrics(df)
+        
+        # Detect column types for AI context
+        column_types = hr_analytics.detect_column_types(df)
+        
+        # Get relevant context from context manager
+        tool_context = context_manager.get_context_for_tool('Calculate_HR_Metrics')
+        
+        # Get column definitions for columns in this dataset
+        column_definitions = {}
+        for col in df.columns:
+            col_def = context_manager.get_column_definition(col)
+            if col_def:
+                column_definitions[col] = col_def
+        
+        # Generate data preview (first few rows as dict for AI to analyze)
+        data_preview = df.head(10).to_dict('records') if len(df) > 0 else []
+        
+        # Statistical summaries for numeric columns
+        numeric_summaries = {}
+        for col in df.select_dtypes(include=['int64', 'float64']).columns:
+            numeric_summaries[col] = {
+                'mean': float(df[col].mean()) if df[col].notna().any() else None,
+                'median': float(df[col].median()) if df[col].notna().any() else None,
+                'std': float(df[col].std()) if df[col].notna().any() else None,
+                'min': float(df[col].min()) if df[col].notna().any() else None,
+                'max': float(df[col].max()) if df[col].notna().any() else None,
+                'q25': float(df[col].quantile(0.25)) if df[col].notna().any() else None,
+                'q75': float(df[col].quantile(0.75)) if df[col].notna().any() else None
+            }
+        
+        # Categorical distributions for AI to analyze
+        categorical_distributions = {}
+        for col in df.select_dtypes(include=['object']).columns:
+            value_counts = df[col].value_counts().head(20)
+            categorical_distributions[col] = value_counts.to_dict()
         
         return {
             "success": True,
             "file_name": file_name,
-            "metrics": metrics,
+            
+            # Pre-calculated metrics (REFERENCE - AI can use these as starting point)
+            "pre_calculated_metrics": metrics,
+            
+            # Raw data for AI to analyze and discover new insights
             "data_summary": {
                 "total_rows": len(df),
                 "total_columns": len(df.columns),
-                "columns": list(df.columns)
+                "columns": list(df.columns),
+                "column_types": column_types,
+                "data_preview": data_preview,
+                "numeric_summaries": numeric_summaries,
+                "categorical_distributions": categorical_distributions
+            },
+            
+            # Context to guide AI analysis
+            "context": {
+                "column_definitions": column_definitions,
+                "business_context": tool_context[:2000] if tool_context else None,  # Truncate for token efficiency
+                "analysis_guidance": "Use pre_calculated_metrics as reference. Analyze data_summary to discover additional insights, patterns, correlations, and anomalies not captured by standard metrics. Consider business context when making recommendations."
             }
         }
         
@@ -797,9 +851,15 @@ async def generate_chart_data_tool(folder_name: str, file_name: str, chart_type:
     except Exception as e:
         return {"success": False, "message": f"Error generating chart data: {str(e)}"}
 
-@mcp.tool(name="Analyze_HR_File_Complete", description="Complete analysis of HR Excel file including data quality, metrics, and chart data")
+@mcp.tool(name="Analyze_HR_File_Complete", description="Complete analysis of HR Excel file including data quality, metrics, and chart data. Returns structured data + raw data summaries to enable AI to generate custom insights beyond pre-defined analysis.")
 async def analyze_hr_file_complete_tool(folder_name: str, file_name: str):
-    """Perform complete analysis of HR Excel file including data quality, metrics, and suggested visualizations"""
+    """Perform complete analysis of HR Excel file including data quality, metrics, and suggested visualizations.
+    
+    Returns pre-calculated analysis as REFERENCE, plus raw data and context to allow AI to:
+    - Discover patterns and correlations not in pre-defined metrics
+    - Generate custom insights based on specific data characteristics
+    - Make context-aware recommendations using business knowledge
+    """
     try:
         # Get the Excel content
         content_result = get_document_content(folder_name, file_name)
@@ -827,22 +887,79 @@ async def analyze_hr_file_complete_tool(folder_name: str, file_name: str):
             except:
                 continue  # Skip charts that can't be generated
         
+        # Get context for AI-driven insights
+        tool_context = context_manager.get_context_for_tool('Analyze_HR_File_Complete')
+        column_types = hr_analytics.detect_column_types(df)
+        
+        # Get column definitions
+        column_definitions = {}
+        for col in df.columns:
+            col_def = context_manager.get_column_definition(col)
+            if col_def:
+                column_definitions[col] = col_def
+        
+        # Data preview for AI analysis
+        data_preview = df.head(15).to_dict('records') if len(df) > 0 else []
+        
+        # Statistical summaries
+        numeric_summaries = {}
+        for col in df.select_dtypes(include=['int64', 'float64']).columns:
+            numeric_summaries[col] = {
+                'mean': float(df[col].mean()) if df[col].notna().any() else None,
+                'median': float(df[col].median()) if df[col].notna().any() else None,
+                'std': float(df[col].std()) if df[col].notna().any() else None,
+                'min': float(df[col].min()) if df[col].notna().any() else None,
+                'max': float(df[col].max()) if df[col].notna().any() else None
+            }
+        
+        # Categorical distributions
+        categorical_distributions = {}
+        for col in df.select_dtypes(include=['object']).columns:
+            value_counts = df[col].value_counts().head(15)
+            categorical_distributions[col] = value_counts.to_dict()
+        
         return {
             "success": True,
             "file_name": file_name,
+            
+            # Basic data info
             "data_summary": {
                 "total_rows": len(df),
                 "total_columns": len(df.columns),
                 "columns": list(df.columns),
+                "column_types": column_types,
                 "date_range": {
                     "earliest_date": str(df.select_dtypes(include=['datetime64']).min().min()) if not df.select_dtypes(include=['datetime64']).empty else None,
                     "latest_date": str(df.select_dtypes(include=['datetime64']).max().max()) if not df.select_dtypes(include=['datetime64']).empty else None
-                }
+                },
+                "data_preview": data_preview,
+                "numeric_summaries": numeric_summaries,
+                "categorical_distributions": categorical_distributions
             },
-            "data_quality": validation_results,
-            "hr_metrics": metrics,
-            "suggested_charts": chart_suggestions,
-            "recommendations": _generate_recommendations(validation_results, metrics)
+            
+            # Pre-calculated analysis (REFERENCE for AI)
+            "pre_calculated_analysis": {
+                "data_quality": validation_results,
+                "hr_metrics": metrics,
+                "suggested_charts": chart_suggestions,
+                "basic_recommendations": _generate_recommendations(validation_results, metrics)
+            },
+            
+            # Context for AI-driven insights
+            "context": {
+                "column_definitions": column_definitions,
+                "business_context": tool_context[:3000] if tool_context else None,
+                "analysis_guidance": (
+                    "The pre_calculated_analysis provides standard metrics as REFERENCE. "
+                    "Use data_summary to discover additional insights:\n"
+                    "- Identify patterns, trends, and correlations not captured by standard metrics\n"
+                    "- Analyze distributions and outliers in numeric_summaries\n"
+                    "- Examine categorical_distributions for hiring patterns\n"
+                    "- Consider business_context and column_definitions when interpreting data\n"
+                    "- Generate custom recommendations based on specific data characteristics\n"
+                    "- Think creatively about what the data reveals beyond pre-defined metrics"
+                )
+            }
         }
         
     except Exception as e:
