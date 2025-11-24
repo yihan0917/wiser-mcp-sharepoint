@@ -543,6 +543,117 @@ Insights generated:
 "🎯 Recommendation: Focus on streamlining 'In-Review/Recruiter Screen' step"
 ```
 
+## PowerPoint Analysis Workflow
+
+### Overview
+
+The SharePoint MCP server includes advanced PowerPoint generation capabilities that create comprehensive, AI-driven presentations from HR data analysis. This workflow demonstrates how to analyze Excel files and generate professional presentations with actionable insights.
+
+### Workflow Example: Time-in-Step Analysis
+
+Here's a complete example of analyzing hiring process data and generating a PowerPoint presentation:
+
+#### Step 1: Analyze HR Data
+```python
+# Use the comprehensive analysis tool
+mcp2_Analyze_HR_File_Complete(
+    folder_name="Recruiting Data",
+    file_name="Training_Time_In_Step_Q3_97_records.xlsx"
+)
+```
+
+**What this provides:**
+- **Data Summary**: 97 records, 28 columns, date ranges, data types
+- **Pre-calculated Metrics**: Time-to-hire averages, bottleneck identification, department distributions
+- **Business Context**: Automatic injection of 123K+ characters of context (role descriptions, hiring guides, career paths)
+- **Column Definitions**: Automatic mapping of Excel columns to business meanings
+- **Raw Data Access**: Statistical summaries, distributions, and data previews for AI analysis
+
+#### Step 2: Generate PowerPoint Presentation
+```python
+# Create comprehensive presentation using JSON template format
+mcp2_Generate_AI_PowerPoint(
+    presentation_title="Q3 Hiring Process Analysis: Time-in-Step Deep Dive",
+    output_filename="Q3_Hiring_Time_Analysis.pptx",
+    output_folder="Recruiting Data",
+    slides=[
+        {
+            "title": "Executive Summary",
+            "data": {
+                "type": "metric",
+                "value": "76 Days",
+                "label": "Average Time to Hire",
+                "context": [
+                    "97 positions analyzed (100% fill rate)",
+                    "Range: 42-100 days (58-day spread)",
+                    "Data period: Q3 2023 - Q1 2024"
+                ]
+            }
+        },
+        {
+            "title": "Critical Process Bottlenecks",
+            "data": {
+                "type": "analysis",
+                "content": [
+                    "Hiring Manager Interview: 12.7 days average (17% of total time)",
+                    "Final Interview Coordination: 10.6 days average (14% of total time)",
+                    "Manager Review Process: 9.1 days average (12% of total time)"
+                ]
+            }
+        }
+        // ... additional slides
+    ]
+)
+```
+
+### PowerPoint JSON Template System
+
+The server uses a structured JSON template system for creating presentations. Key slide types include:
+
+#### Available Slide Types
+1. **`metric`** - Large metric display with context
+2. **`analysis`** - Bullet point analysis
+3. **`comparison`** - Side-by-side comparisons
+4. **`two_column`** - General two-column layouts
+5. **`recommendation`** - Strategic recommendations with rationale
+6. **`table`** - Data tables with insights
+7. **`chart_with_analysis`** - Charts with analysis points
+
+#### Template Reference
+See `PowerPoint_JSON_Template.md` for complete formatting guidelines and examples.
+
+### Real-World Analysis Results
+
+**Example Output from Time-in-Step Analysis:**
+- **12 slides generated** covering executive summary, bottlenecks, recommendations, and implementation roadmap
+- **Key Insights Identified**:
+  - Interview stages account for 44% of total hiring time (33.2 days)
+  - Hiring Manager Interview is the longest single stage (12.7 days)
+  - 100% fill rate demonstrates strong candidate pipeline
+  - No significant departmental variations suggest system-wide optimization opportunity
+- **Strategic Recommendations**:
+  - Implement automated interview scheduling (target: 8-day reduction)
+  - Streamline final interview coordination (target: 3.6-day reduction)
+  - Create manager review SLAs (target: 4.1-day reduction)
+  - Overall goal: Reduce from 76 to 55-60 days (20-25% improvement)
+
+### Benefits of This Workflow
+
+1. **Comprehensive Analysis**: Combines pre-calculated metrics with AI-driven insights
+2. **Business Context Integration**: Leverages 123K+ characters of organizational context
+3. **Professional Presentations**: Generates executive-ready PowerPoint files
+4. **Actionable Insights**: Provides specific recommendations with implementation timelines
+5. **Flexible Templates**: Supports multiple slide types and layouts
+6. **SharePoint Integration**: Files automatically uploaded and ready for download
+
+### Best Practices
+
+1. **Use Descriptive Filenames**: Include date ranges and data scope in presentation titles
+2. **Follow JSON Template**: Ensure proper formatting using the template guide
+3. **Include Context**: Leverage the rich business context for meaningful insights
+4. **Focus on Actionability**: Generate specific, measurable recommendations
+5. **Validate Data Quality**: Use data quality tools before analysis to ensure accuracy
+
 ## Setup Notes
 
 - **Graph API is recommended** for new implementations due to better reliability

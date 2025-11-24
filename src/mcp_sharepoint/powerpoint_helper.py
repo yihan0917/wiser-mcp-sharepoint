@@ -13,6 +13,11 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from .common import logger
 import io
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+from PIL import Image
+import base64
 
 class PowerPointHelper:
     """Helper class for creating professional PowerPoint presentations"""
@@ -94,9 +99,8 @@ class PowerPointHelper:
         
         return slide
     
-    def add_chart_to_slide(self, slide, chart_data: Dict, chart_type: str, 
-                          left: float, top: float, width: float, height: float):
-        """Add chart to slide with proper formatting"""
+    def create_matplotlib_chart(self, chart_data: Dict, chart_type: str, width_inches: float = 5.0, height_inches: float = 4.0):
+        """Create chart using matplotlib and return as image bytes"""
         try:
             labels = chart_data.get('labels', [])
             values = chart_data.get('values', [])
@@ -104,58 +108,87 @@ class PowerPointHelper:
             if not labels or not values:
                 return None
             
-            # Create chart data
-            chart_data_obj = CategoryChartData()
-            chart_data_obj.categories = labels
-            chart_data_obj.add_series('', values)
+            # Set up matplotlib with professional styling
+            plt.style.use('default')
+            fig, ax = plt.subplots(figsize=(width_inches, height_inches), dpi=150)
             
-            # Determine chart type and y-axis title
-            if chart_type in ['source_effectiveness', 'department_hiring']:
-                xl_chart_type = XL_CHART_TYPE.PIE
-                y_axis_title = None  # Pie charts don't have y-axis
-            elif chart_type == 'hiring_trends':
-                xl_chart_type = XL_CHART_TYPE.LINE
-                y_axis_title = 'Number of Hires'
-            elif chart_type == 'time_to_hire':
-                xl_chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
-                y_axis_title = 'Days'
+            # Professional color palette
+            colors = ['#0070C0', '#44729C', '#ED7D31', '#70AD47', '#FFC000', '#5B9BD5', '#A5A5A5', '#264478']
+            
+            if chart_type in ['pie']:
+                # Create pie chart with legend
+                wedges, texts, autotexts = ax.pie(values, labels=labels, autopct='%1.1f%%', 
+                                                 colors=colors[:len(values)], startangle=90)
+                ax.set_title('')
+                # Position legend below chart
+                ax.legend(wedges, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=2)
+                
             else:
-                xl_chart_type = XL_CHART_TYPE.COLUMN_CLUSTERED
-                y_axis_title = 'Count'
+                # Create bar chart without legend
+                bars = ax.bar(labels, values, color=colors[:len(values)])
+                ax.set_ylabel('Count')
+                ax.set_title('')
+                
+                # Handle x-axis labels intelligently
+                max_label_length = max(len(str(label)) for label in labels) if labels else 0
+                
+                if len(labels) > 4 or max_label_length > 12:
+                    # Rotate labels for better readability
+                    plt.xticks(rotation=45, ha='right', fontsize=9)
+                    # Add more bottom margin for rotated labels
+                    plt.subplots_adjust(bottom=0.2)
+                elif max_label_length > 8:
+                    # Smaller font for medium-length labels
+                    plt.xticks(fontsize=9)
+                else:
+                    # Normal font for short labels
+                    plt.xticks(fontsize=10)
+                
+                # Add value labels on top of bars
+                for bar in bars:
+                    height = bar.get_height()
+                    ax.text(bar.get_x() + bar.get_width()/2., height + max(values)*0.01,
+                           f'{height:.1f}', ha='center', va='bottom', fontsize=9)
             
-            # Add chart to slide
-            chart = slide.shapes.add_chart(
-                xl_chart_type, Inches(left), Inches(top),
-                Inches(width), Inches(height), chart_data_obj
-            ).chart
+            # Clean up the chart appearance
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.grid(True, alpha=0.3, axis='y')
             
-            # Format chart legend - smaller font, positioned at bottom
-            chart.has_legend = True
-            if xl_chart_type == XL_CHART_TYPE.PIE:
-                chart.legend.position = 3  # Bottom for pie charts
+            # Tight layout to minimize whitespace
+            plt.tight_layout()
+            
+            # Save to bytes
+            img_buffer = io.BytesIO()
+            plt.savefig(img_buffer, format='png', bbox_inches='tight', dpi=150, 
+                       facecolor='white', edgecolor='none')
+            img_buffer.seek(0)
+            plt.close(fig)  # Clean up memory
+            
+            return img_buffer.getvalue()
+            
+        except Exception as e:
+            logger.error(f"Error creating matplotlib chart: {e}")
+            return None
+
+    def add_chart_to_slide(self, slide, chart_data: Dict, chart_type: str, 
+                          left: float, top: float, width: float, height: float):
+        """Add chart to slide using matplotlib for better control"""
+        try:
+            # Create chart image using matplotlib
+            chart_image_bytes = self.create_matplotlib_chart(chart_data, chart_type, width, height)
+            
+            if chart_image_bytes:
+                # Add image to slide
+                img_stream = io.BytesIO(chart_image_bytes)
+                picture = slide.shapes.add_picture(
+                    img_stream, Inches(left), Inches(top), 
+                    Inches(width), Inches(height)
+                )
+                return picture
             else:
-                chart.legend.position = 3  # Bottom for all charts
-            chart.legend.font.size = Pt(9)  # Smaller legend font
-            chart.legend.include_in_layout = False
-            
-            # Format category axis (x-axis labels) - smaller font
-            if hasattr(chart, 'category_axis'):
-                chart.category_axis.tick_labels.font.size = Pt(9)  # Smaller x-axis labels
-                # Rotate labels if too many categories
-                if len(labels) > 8:
-                    chart.category_axis.tick_labels.orientation = -45
-            
-            # Format value axis (y-axis) with title
-            if hasattr(chart, 'value_axis') and y_axis_title:
-                chart.value_axis.tick_labels.font.size = Pt(9)
-                # Add y-axis title
-                chart.value_axis.has_title = True
-                chart.value_axis.axis_title.text_frame.text = y_axis_title
-                chart.value_axis.axis_title.text_frame.paragraphs[0].font.size = Pt(11)
-                chart.value_axis.axis_title.text_frame.paragraphs[0].font.bold = True
-            
-            return chart
-            
+                return None
+                
         except Exception as e:
             logger.error(f"Error adding chart to slide: {e}")
             return None
