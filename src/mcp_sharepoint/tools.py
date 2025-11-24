@@ -895,7 +895,8 @@ async def create_excel_with_charts_tool(folder_name: str, file_name: str, chart_
     except Exception as e:
         return {"success": False, "message": f"Error creating Excel with charts: {str(e)}"}
 
-@mcp.tool(name="Create_PowerPoint_Report", description="Create professional PowerPoint presentation with charts, insights, and data definitions")
+@mcp.tool(name="Create_PowerPoint_Report", 
+description="Create professional PowerPoint presentation with charts, insights, and data definitions. This tool creates basic PowerPoint reports with standard charts. For comprehensive, detailed presentations with custom visualizations, Claude should generate the presentation manually and then upload it to SharePoint.")
 async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[str] = None, output_folder: Optional[str] = None, presentation_title: Optional[str] = None):
     """Create professional PowerPoint presentation from HR data analysis"""
     try:

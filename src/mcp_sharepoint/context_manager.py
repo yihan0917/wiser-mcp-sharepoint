@@ -15,7 +15,7 @@ class ContextManager:
         'columns': ['column_definitions.md'],
         'metrics': ['metrics_definitions.md'],
         'business': ['company_overview.md', 'engineering_overview.md'],
-        'recruiting': ['hiring_guide.md', 'career_path.md'],
+        'recruiting': ['hiring_guide.md', 'engineering_career_path.md'],
         'roles': [
             # Software Engineering roles
             'software_engineer_role_description.md',
@@ -38,15 +38,19 @@ class ContextManager:
             'Position-Description-PDA.md',
             'Position-Description-SEMLDS Manager.md',
             'Position-Description-Analytics Manager.md'
+        ],
+        'operations': [
+            # In-Store Operations roles (separate from Engineering/Tech roles)
+            'in_store_operations_role_description.md'
         ]
     }
     
     # Map tools to the context categories they need
     TOOL_CONTEXT_MAP = {
-        'Analyze_HR_File_Complete': ['columns', 'business', 'metrics', 'roles'],
-        'Calculate_HR_Metrics': ['columns', 'metrics', 'recruiting', 'roles'],
-        'Validate_Excel_Data_Quality': ['columns', 'recruiting', 'roles'],
-        'Create_PowerPoint_Report': ['columns', 'business', 'metrics', 'recruiting', 'roles'],
+        'Analyze_HR_File_Complete': ['columns', 'business', 'metrics', 'roles', 'operations'],
+        'Calculate_HR_Metrics': ['columns', 'metrics', 'recruiting', 'roles', 'operations'],
+        'Validate_Excel_Data_Quality': ['columns', 'recruiting', 'roles', 'operations'],
+        'Create_PowerPoint_Report': ['columns', 'business', 'metrics', 'recruiting', 'roles', 'operations'],
         'Create_Excel_With_Charts': ['columns', 'metrics'],
         'Generate_Chart_Data': ['columns', 'metrics'],
         'Get_Document_Content': ['columns'],

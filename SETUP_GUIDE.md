@@ -143,7 +143,7 @@ The system organizes context into 5 categories:
 
 #### 4. **Recruiting** (30,093 chars)
 - `hiring_guide.md` - Hiring processes and guidelines
-- `career_path.md` - Career progression framework
+- `engineering_career_path.md` - Engineering career progression framework (L1-L10)
 
 #### 5. **Roles** (70,823 chars) - **22 files**
 - **Software Engineering**: `software_engineer_role_description.md` (L1-L8)
@@ -187,11 +187,12 @@ src/mcp_sharepoint/context/
 ├── company_overview.md
 ├── engineering_overview.md
 ├── hiring_guide.md
-├── career_path.md
+├── engineering_career_path.md                    # ← Renamed from career_path.md
 ├── software_engineer_role_description.md
 ├── data_management_role_description.md
 ├── engineering_leadership_role_description.md
 ├── ml_ds_da_role_description.md
+├── in_store_operations_role_description.md       # ← NEW: Operations roles
 ├── Position-Description-MLE1-DS1.md
 ├── Position-Description-DA1.md
 ├── Position-Description-MLE2-DS2.md
@@ -242,6 +243,82 @@ CONTEXT_CATEGORIES = {
     ]
 }
 ```
+
+### Recent Context Updates (November 2024)
+
+#### 1. **Engineering Career Path Renamed & Reformatted**
+- ✅ **Renamed**: `career_path.md` → `engineering_career_path.md`
+- ✅ **Department Identifier**: Added clear "DEPARTMENT: ENGINEERING" header
+- ✅ **Improved Structure**: Reorganized with proper Markdown hierarchy
+  - Overview section (Why career paths, two tracks, leadership team)
+  - Important Notes (bullet-pointed for clarity)
+  - Career Path Levels (L1-L10 with clear descriptions)
+- ✅ **Track Organization**: Titles now grouped by Maker/Architect/Manager tracks
+- ✅ **Better Formatting**: Consistent headings, horizontal dividers, bold labels
+
+**Why the rename?**  
+The career path framework is specific to Engineering and shouldn't be confused with career paths in other departments (Operations, Sales, etc.).
+
+#### 2. **In-Store Operations Roles Added**
+- ✅ **New File**: `in_store_operations_role_description.md`
+- ✅ **New Category**: Created 'operations' category separate from 'roles'
+- ✅ **Department Clarity**: Clear header stating "DEPARTMENT: IN-STORE OPERATIONS"
+- ✅ **Warning Label**: Explicit note to NOT apply these to similarly-titled roles in other departments
+
+**Roles Covered:**
+- **Retail Intelligence (RI)**: Data Validation Team (Sr. Data Quality Specialist, Team Leads)
+- **User Support**: User Support Associate, Team Leads
+- **REM/RI**: Technical Implementation Specialists, Team Leads, Operations Manager
+- **ISPC**: Data Collection Specialists, Technical Implementation Specialists, Sr. Technical Operations Analyst, Operations Manager
+
+**Why separate from Engineering roles?**  
+To prevent AI confusion when analyzing HR data. A "Team Lead" in Operations has completely different responsibilities than a "Lead Engineer" in Engineering.
+
+#### 3. **Context Manager Updates**
+Updated `context_manager.py` to reflect these changes:
+
+```python
+CONTEXT_CATEGORIES = {
+    'columns': ['column_definitions.md'],
+    'metrics': ['metrics_definitions.md'],
+    'business': ['company_overview.md', 'engineering_overview.md'],
+    'recruiting': ['hiring_guide.md', 'engineering_career_path.md'],  # ← Updated
+    'roles': [
+        # Engineering roles (22 files)
+        'software_engineer_role_description.md',
+        'data_management_role_description.md',
+        # ... other engineering roles
+    ],
+    'operations': [  # ← NEW category
+        'in_store_operations_role_description.md'
+    ]
+}
+
+TOOL_CONTEXT_MAP = {
+    'Analyze_HR_File_Complete': ['columns', 'business', 'metrics', 'roles', 'operations'],  # ← Added operations
+    'Calculate_HR_Metrics': ['columns', 'metrics', 'recruiting', 'roles', 'operations'],
+    'Validate_Excel_Data_Quality': ['columns', 'recruiting', 'roles', 'operations'],
+    'Create_PowerPoint_Report': ['columns', 'business', 'metrics', 'recruiting', 'roles', 'operations'],
+    # ... other tools
+}
+```
+
+#### 4. **Benefits of These Updates**
+
+**Better Department Separation:**
+- Engineering roles clearly labeled as Engineering-specific
+- Operations roles clearly labeled as Operations-specific
+- Prevents cross-department confusion in AI analysis
+
+**Improved Formatting:**
+- Consistent structure across all role description files
+- Easy to scan with clear headings and sections
+- Professional appearance with proper Markdown formatting
+
+**Enhanced Context Awareness:**
+- AI tools now understand department boundaries
+- More accurate role matching and analysis
+- Better recommendations aligned with specific department needs
 
 ### Context Manager Features
 
@@ -517,11 +594,12 @@ wiser-mcp-sharepoint/
 │       │   ├── company_overview.md
 │       │   ├── engineering_overview.md
 │       │   ├── hiring_guide.md
-│       │   ├── career_path.md
+│       │   ├── engineering_career_path.md  # ← Renamed from career_path.md
 │       │   ├── software_engineer_role_description.md
 │       │   ├── data_management_role_description.md
 │       │   ├── engineering_leadership_role_description.md
 │       │   ├── ml_ds_da_role_description.md
+│       │   ├── in_store_operations_role_description.md  # ← NEW
 │       │   ├── Position-Description-MLE1-DS1.md
 │       │   ├── Position-Description-DA1.md
 │       │   ├── Position-Description-MLE2-DS2.md
