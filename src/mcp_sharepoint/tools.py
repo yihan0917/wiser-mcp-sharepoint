@@ -13,6 +13,15 @@ from .context_manager import context_manager
 from .analytics_helper import hr_analytics
 from .visualization_helper import visualization_helper
 from .powerpoint_helper import PowerPointHelper
+from datetime import datetime
+import json
+from io import BytesIO
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.enum.text import PP_PARAGRAPH_ALIGNMENT
+from pptx.chart.data import CategoryChartData
+from pptx.enum.chart import XL_CHART_TYPE
+from pptx.dml.color import RGBColor
 
 # Helper functions
 def _handle_sp_operation(func):
@@ -1302,14 +1311,6 @@ async def convert_content_to_powerpoint_tool(
         Dict with success status, file info, and download details
     """
     try:
-        import json
-        from io import BytesIO
-        from pptx import Presentation
-        from pptx.util import Inches, Pt
-        from pptx.enum.text import PP_ALIGN, PP_PARAGRAPH_ALIGNMENT
-        from pptx.chart.data import CategoryChartData
-        from pptx.enum.chart import XL_CHART_TYPE
-        from pptx.dml.color import RGBColor
         
         # Set defaults
         if output_folder is None:
@@ -1474,7 +1475,7 @@ def _create_title_slide(prs, title: str, theme_colors: dict, subtitle: str = "")
     title_frame = title_box.text_frame
     title_frame.text = title
     title_para = title_frame.paragraphs[0]
-    title_para.alignment = PP_ALIGN.CENTER
+    title_para.alignment = PP_PARAGRAPH_ALIGNMENT.CENTER
     title_para.font.size = Pt(44)
     title_para.font.bold = True
     title_para.font.color.rgb = theme_colors["primary"]
@@ -1485,7 +1486,7 @@ def _create_title_slide(prs, title: str, theme_colors: dict, subtitle: str = "")
         subtitle_frame = subtitle_box.text_frame
         subtitle_frame.text = subtitle
         subtitle_para = subtitle_frame.paragraphs[0]
-        subtitle_para.alignment = PP_ALIGN.CENTER
+        subtitle_para.alignment = PP_PARAGRAPH_ALIGNMENT.CENTER
         subtitle_para.font.size = Pt(20)
         subtitle_para.font.color.rgb = theme_colors["secondary"]
 
@@ -1699,7 +1700,7 @@ def _create_image_slide(prs, slide_def: dict, theme_colors: dict):
     text_box = slide.shapes.add_textbox(left, top, width, height)
     tf = text_box.text_frame
     tf.text = "[Image placeholder - image support requires additional implementation]"
-    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    tf.paragraphs[0].alignment = PP_PARAGRAPH_ALIGNMENT.CENTER
     tf.paragraphs[0].font.size = Pt(16)
     tf.paragraphs[0].font.color.rgb = theme_colors["accent"]
 
