@@ -1141,5 +1141,115 @@ async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[st
         return {"success": False, "message": f"Error creating PowerPoint presentation: {str(e)}"}
 
 
+@mcp.tool(name="Generate_AI_PowerPoint",
+description="""Create custom PowerPoint presentation from AI-generated insights. 
+This tool allows the AI to create comprehensive, detailed presentations with custom visualizations and insights.
+
+The AI provides structured insights in JSON format with flexible slide types:
+- 'metric': Highlight key metrics with large values
+- 'comparison': Side-by-side comparisons
+- 'recommendation': Actionable recommendations with rationale
+- 'analysis': Detailed analysis with bullet points
+- 'chart_with_analysis': Charts with insights
+- 'table': Data tables with insights
+- 'two_column': Two-column layouts
+
+This is the preferred tool for creating comprehensive presentations with AI-driven insights.""")
+async def generate_ai_powerpoint_tool(
+    presentation_title: str,
+    slides: str,  # JSON string of slide definitions
+    output_folder: Optional[str] = None,
+    output_filename: Optional[str] = None
+):
+    """
+    Generate PowerPoint presentation from AI-structured insights
+    
+    Args:
+        presentation_title: Title for the presentation
+        slides: JSON string containing array of slide definitions
+        output_folder: SharePoint folder to upload to (default: "AI Generated Reports")
+        output_filename: Output filename (default: auto-generated)
+    
+    Slide format:
+    {
+        "title": "Slide Title",
+        "type": "metric|comparison|recommendation|analysis|chart_with_analysis|table|two_column",
+        "data": {
+            // Type-specific data structure
+        }
+    }
+    """
+    try:
+        import json
+        
+        # Set defaults
+        if output_folder is None:
+            output_folder = "AI Generated Reports"
+        if output_filename is None:
+            output_filename = f"AI_Presentation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
+        
+        # Ensure .pptx extension
+        if not output_filename.endswith('.pptx'):
+            output_filename += '.pptx'
+        
+        # Parse slides JSON
+        try:
+            slides_data = json.loads(slides)
+        except json.JSONDecodeError as e:
+            return {"success": False, "message": f"Invalid JSON format for slides: {str(e)}"}
+        
+        if not isinstance(slides_data, list):
+            return {"success": False, "message": "Slides must be a JSON array"}
+        
+        # Create PowerPoint
+        ppt = PowerPointHelper()
+        
+        # Title slide
+        ppt.create_title_slide(presentation_title)
+        
+        # Create slides from AI insights
+        slides_created = 1  # Count title slide
+        for slide_def in slides_data:
+            try:
+                slide_title = slide_def.get('title', 'Untitled Slide')
+                slide_data = slide_def.get('data', {})
+                
+                # Create insight slide using flexible template system
+                ppt.create_insight_slide(slide_title, slide_data)
+                slides_created += 1
+                
+            except Exception as e:
+                logger.error(f"Error creating slide '{slide_def.get('title', 'unknown')}': {e}")
+                continue
+        
+        # Save to bytes
+        pptx_bytes = ppt.save_to_bytes()
+        
+        # Upload to SharePoint
+        upload_result = _upload_file_helper(
+            output_folder, 
+            output_filename, 
+            base64.b64encode(pptx_bytes).decode(), 
+            is_base64=True
+        )
+        
+        if not upload_result.get("success", False):
+            return {
+                "success": False,
+                "message": f"Failed to upload PowerPoint: {upload_result.get('message', 'Unknown error')}"
+            }
+        
+        return {
+            "success": True,
+            "message": f"AI-generated PowerPoint created successfully: {output_filename}",
+            "file_name": output_filename,
+            "folder": output_folder,
+            "slides_created": slides_created,
+            "download_info": "File uploaded to SharePoint and ready for download"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in Generate_AI_PowerPoint: {e}")
+        return {"success": False, "message": f"Error generating AI PowerPoint: {str(e)}"}
 
 

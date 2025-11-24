@@ -265,6 +265,256 @@ class PowerPointHelper:
         
         return slide
     
+    def create_insight_slide(self, title: str, insight_data: Dict):
+        """
+        Create flexible insight slide based on insight type
+        
+        Supported insight types:
+        - 'metric': Key metric with value and context
+        - 'comparison': Side-by-side comparison
+        - 'recommendation': Actionable recommendation with rationale
+        - 'analysis': Detailed analysis with bullet points
+        - 'chart_with_analysis': Chart with detailed insights
+        - 'table': Data table with insights
+        - 'two_column': Two-column layout with sections
+        """
+        insight_type = insight_data.get('type', 'analysis')
+        
+        if insight_type == 'metric':
+            return self._create_metric_slide(title, insight_data)
+        elif insight_type == 'comparison':
+            return self._create_comparison_slide(title, insight_data)
+        elif insight_type == 'recommendation':
+            return self._create_recommendation_slide(title, insight_data)
+        elif insight_type == 'chart_with_analysis':
+            return self._create_chart_analysis_slide(title, insight_data)
+        elif insight_type == 'table':
+            return self._create_table_slide(title, insight_data)
+        elif insight_type == 'two_column':
+            return self._create_two_column_slide(title, insight_data)
+        else:  # Default to 'analysis'
+            return self._create_analysis_slide(title, insight_data)
+    
+    def _create_metric_slide(self, title: str, data: Dict):
+        """Create slide highlighting a key metric"""
+        slide = self.create_content_slide(title)
+        
+        # Large metric value in center
+        metric_value = data.get('value', '')
+        metric_label = data.get('label', '')
+        
+        # Metric value - large and centered
+        value_box = slide.shapes.add_textbox(
+            Inches(2), Inches(2), Inches(6), Inches(1.5)
+        )
+        value_frame = value_box.text_frame
+        value_frame.text = str(metric_value)
+        value_para = value_frame.paragraphs[0]
+        value_para.alignment = PP_ALIGN.CENTER
+        value_para.font.size = Pt(72)
+        value_para.font.bold = True
+        value_para.font.color.rgb = self.COLORS['primary']
+        
+        # Metric label
+        label_box = slide.shapes.add_textbox(
+            Inches(2), Inches(3.5), Inches(6), Inches(0.5)
+        )
+        label_frame = label_box.text_frame
+        label_frame.text = metric_label
+        label_para = label_frame.paragraphs[0]
+        label_para.alignment = PP_ALIGN.CENTER
+        label_para.font.size = Pt(24)
+        label_para.font.color.rgb = self.COLORS['text']
+        
+        # Context/insights below
+        context = data.get('context', [])
+        if context:
+            self.add_bullet_points(slide, context, left=2, top=4.5, width=6, height=2)
+        
+        return slide
+    
+    def _create_comparison_slide(self, title: str, data: Dict):
+        """Create slide with side-by-side comparison"""
+        slide = self.create_content_slide(title)
+        
+        left_content = data.get('left', {})
+        right_content = data.get('right', {})
+        
+        # Left side
+        left_title_box = slide.shapes.add_textbox(
+            Inches(0.5), Inches(1.2), Inches(4), Inches(0.5)
+        )
+        left_title_frame = left_title_box.text_frame
+        left_title_frame.text = left_content.get('title', '')
+        left_title_para = left_title_frame.paragraphs[0]
+        left_title_para.font.size = Pt(20)
+        left_title_para.font.bold = True
+        left_title_para.font.color.rgb = self.COLORS['primary']
+        
+        if left_content.get('points'):
+            self.add_bullet_points(slide, left_content['points'], 
+                                 left=0.5, top=1.8, width=4, height=4.5)
+        
+        # Right side
+        right_title_box = slide.shapes.add_textbox(
+            Inches(5.5), Inches(1.2), Inches(4), Inches(0.5)
+        )
+        right_title_frame = right_title_box.text_frame
+        right_title_frame.text = right_content.get('title', '')
+        right_title_para = right_title_frame.paragraphs[0]
+        right_title_para.font.size = Pt(20)
+        right_title_para.font.bold = True
+        right_title_para.font.color.rgb = self.COLORS['accent']
+        
+        if right_content.get('points'):
+            self.add_bullet_points(slide, right_content['points'],
+                                 left=5.5, top=1.8, width=4, height=4.5)
+        
+        return slide
+    
+    def _create_recommendation_slide(self, title: str, data: Dict):
+        """Create slide with actionable recommendation"""
+        slide = self.create_content_slide(title)
+        
+        # Recommendation box with colored background
+        rec_shape = slide.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE,
+            Inches(1), Inches(1.5), Inches(8), Inches(1.2)
+        )
+        rec_shape.fill.solid()
+        rec_shape.fill.fore_color.rgb = self.COLORS['success']
+        rec_shape.line.fill.background()
+        
+        # Recommendation text
+        rec_text = data.get('recommendation', '')
+        rec_box = slide.shapes.add_textbox(
+            Inches(1.2), Inches(1.7), Inches(7.6), Inches(0.8)
+        )
+        rec_frame = rec_box.text_frame
+        rec_frame.text = rec_text
+        rec_frame.word_wrap = True
+        rec_para = rec_frame.paragraphs[0]
+        rec_para.font.size = Pt(18)
+        rec_para.font.bold = True
+        rec_para.font.color.rgb = RGBColor(255, 255, 255)
+        
+        # Rationale section
+        rationale = data.get('rationale', [])
+        if rationale:
+            rationale_label = slide.shapes.add_textbox(
+                Inches(1), Inches(3), Inches(8), Inches(0.4)
+            )
+            rationale_label.text_frame.text = "Rationale:"
+            rationale_label.text_frame.paragraphs[0].font.size = Pt(16)
+            rationale_label.text_frame.paragraphs[0].font.bold = True
+            rationale_label.text_frame.paragraphs[0].font.color.rgb = self.COLORS['primary']
+            
+            self.add_bullet_points(slide, rationale, left=1, top=3.5, width=8, height=2.5)
+        
+        return slide
+    
+    def _create_analysis_slide(self, title: str, data: Dict):
+        """Create slide with detailed analysis points"""
+        slide = self.create_content_slide(title)
+        
+        # Main content
+        content = data.get('content', [])
+        if content:
+            self.add_bullet_points(slide, content, left=0.8, top=1.2, width=8.4, height=5.5)
+        
+        # Optional footer note
+        footer = data.get('footer', '')
+        if footer:
+            footer_box = slide.shapes.add_textbox(
+                Inches(0.8), Inches(6.8), Inches(8.4), Inches(0.4)
+            )
+            footer_frame = footer_box.text_frame
+            footer_frame.text = footer
+            footer_para = footer_frame.paragraphs[0]
+            footer_para.font.size = Pt(10)
+            footer_para.font.italic = True
+            footer_para.font.color.rgb = self.COLORS['text']
+        
+        return slide
+    
+    def _create_chart_analysis_slide(self, title: str, data: Dict):
+        """Create slide with chart and detailed analysis"""
+        slide = self.create_content_slide(title)
+        
+        # Chart on left
+        chart_data = data.get('chart_data', {})
+        chart_type = data.get('chart_type', 'bar')
+        if chart_data:
+            self.add_chart_to_slide(
+                slide, chart_data, chart_type,
+                left=0.5, top=1.2, width=5.0, height=5.0
+            )
+        
+        # Analysis on right
+        analysis = data.get('analysis', [])
+        if analysis:
+            self.add_bullet_points(slide, analysis, left=6, top=1.2, width=3.5, height=5.5)
+        
+        return slide
+    
+    def _create_table_slide(self, title: str, data: Dict):
+        """Create slide with data table and insights"""
+        slide = self.create_content_slide(title)
+        
+        # Table
+        table_data = data.get('table_data', [])
+        if table_data:
+            self.add_table(
+                slide, table_data,
+                left=0.5, top=1.2, width=9, height=4,
+                header_row=data.get('header_row', True)
+            )
+        
+        # Insights below table
+        insights = data.get('insights', [])
+        if insights:
+            self.add_bullet_points(slide, insights, left=0.5, top=5.5, width=9, height=1.5)
+        
+        return slide
+    
+    def _create_two_column_slide(self, title: str, data: Dict):
+        """Create slide with two-column layout"""
+        slide = self.create_content_slide(title)
+        
+        sections = data.get('sections', [])
+        
+        # Left column
+        if len(sections) > 0:
+            left_section = sections[0]
+            left_title = slide.shapes.add_textbox(
+                Inches(0.5), Inches(1.2), Inches(4.5), Inches(0.4)
+            )
+            left_title.text_frame.text = left_section.get('title', '')
+            left_title.text_frame.paragraphs[0].font.size = Pt(18)
+            left_title.text_frame.paragraphs[0].font.bold = True
+            left_title.text_frame.paragraphs[0].font.color.rgb = self.COLORS['primary']
+            
+            if left_section.get('content'):
+                self.add_bullet_points(slide, left_section['content'],
+                                     left=0.5, top=1.7, width=4.5, height=5)
+        
+        # Right column
+        if len(sections) > 1:
+            right_section = sections[1]
+            right_title = slide.shapes.add_textbox(
+                Inches(5.5), Inches(1.2), Inches(4), Inches(0.4)
+            )
+            right_title.text_frame.text = right_section.get('title', '')
+            right_title.text_frame.paragraphs[0].font.size = Pt(18)
+            right_title.text_frame.paragraphs[0].font.bold = True
+            right_title.text_frame.paragraphs[0].font.color.rgb = self.COLORS['primary']
+            
+            if right_section.get('content'):
+                self.add_bullet_points(slide, right_section['content'],
+                                     left=5.5, top=1.7, width=4, height=5)
+        
+        return slide
+    
     def save_to_bytes(self) -> bytes:
         """Save presentation to bytes"""
         pptx_buffer = io.BytesIO()

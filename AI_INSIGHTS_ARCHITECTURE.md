@@ -207,6 +207,256 @@ To manage token usage efficiently:
 
 ---
 
+---
+
+## AI-Driven PowerPoint Generation
+
+### Overview
+The `Generate_AI_PowerPoint` tool enables AI to create **custom, comprehensive presentations** with flexible slide layouts based on insights discovered during analysis.
+
+### Architecture
+
+**Traditional Approach (Create_PowerPoint_Report):**
+- Fixed slide templates (time by step, role distribution, etc.)
+- Pre-defined chart types
+- Generic insights from rule-based logic
+- Limited customization
+
+**AI-Driven Approach (Generate_AI_PowerPoint):**
+- **AI decides what slides to create** based on analysis
+- **Flexible slide types** for different insight presentations
+- **Custom insights** from AI's deep analysis
+- **Full creative control** over presentation structure
+
+### Workflow
+
+```
+1. AI analyzes data using Analyze_HR_File_Complete
+   ↓
+2. AI discovers insights (pre-defined + AI-generated)
+   ↓
+3. AI structures insights into slide definitions (JSON)
+   ↓
+4. AI calls Generate_AI_PowerPoint with structured data
+   ↓
+5. Tool creates PowerPoint and uploads to SharePoint
+```
+
+### Supported Slide Types
+
+#### 1. **Metric Slide**
+Highlight a key metric with large value display.
+
+```json
+{
+  "title": "Average Time-to-Hire",
+  "data": {
+    "type": "metric",
+    "value": "76 days",
+    "label": "Q3 2023 Average",
+    "context": [
+      "Range: 42-100 days",
+      "Median: 76 days",
+      "90th percentile: 91 days"
+    ]
+  }
+}
+```
+
+#### 2. **Comparison Slide**
+Side-by-side comparison of two concepts.
+
+```json
+{
+  "title": "Pre-Defined vs AI Insights",
+  "data": {
+    "type": "comparison",
+    "left": {
+      "title": "Pre-Defined Metrics",
+      "points": ["Time-to-hire: 76d", "Fill rate: 100%"]
+    },
+    "right": {
+      "title": "AI-Generated Insights",
+      "points": ["Interview bottleneck: 33.2d", "Manager delay: 9.1d"]
+    }
+  }
+}
+```
+
+#### 3. **Recommendation Slide**
+Actionable recommendation with rationale.
+
+```json
+{
+  "title": "Streamline Interview Process",
+  "data": {
+    "type": "recommendation",
+    "recommendation": "Reduce interview cycle by 40% through concurrent scheduling",
+    "rationale": [
+      "Current sequential process adds 13-15 days",
+      "Technical + HM interviews can run in parallel",
+      "Industry benchmark: 5-7 days for final round"
+    ]
+  }
+}
+```
+
+#### 4. **Analysis Slide**
+Detailed analysis with bullet points.
+
+```json
+{
+  "title": "Interview Stage Bottleneck",
+  "data": {
+    "type": "analysis",
+    "content": [
+      "Interview stages consume 33.2 days (43.7% of cycle)",
+      "Hiring Manager Interview: 12.7 days",
+      "Technical Interview: 9.9 days",
+      "Context Used: metrics_definitions.md + hiring_guide.md"
+    ],
+    "footer": "AI-generated insight using recruiting context"
+  }
+}
+```
+
+#### 5. **Chart with Analysis**
+Chart on left, insights on right.
+
+```json
+{
+  "title": "Time by Recruiting Stage",
+  "data": {
+    "type": "chart_with_analysis",
+    "chart_data": {
+      "labels": ["New", "Review", "Interview", "Offer"],
+      "values": [5.6, 9.1, 33.2, 8.0]
+    },
+    "chart_type": "bar",
+    "analysis": [
+      "Interview stage is the bottleneck",
+      "3.6x longer than other stages",
+      "Opportunity for 40% reduction"
+    ]
+  }
+}
+```
+
+#### 6. **Table Slide**
+Data table with insights below.
+
+```json
+{
+  "title": "Department Distribution",
+  "data": {
+    "type": "table",
+    "table_data": [
+      ["Department", "Positions", "Avg Time"],
+      ["Legal", "17", "72 days"],
+      ["Engineering", "13", "89 days"]
+    ],
+    "header_row": true,
+    "insights": [
+      "Engineering takes 23% longer",
+      "Likely due to technical interviews"
+    ]
+  }
+}
+```
+
+#### 7. **Two-Column Slide**
+Two independent sections side-by-side.
+
+```json
+{
+  "title": "Geographic Analysis",
+  "data": {
+    "type": "two_column",
+    "sections": [
+      {
+        "title": "Top Locations",
+        "content": ["US: 16", "Mexico: 13", "Australia: 11"]
+      },
+      {
+        "title": "AI Insight",
+        "content": ["International markets may be faster", "Consider Mexico/Poland for urgent roles"]
+      }
+    ]
+  }
+}
+```
+
+### Example: Complete Presentation
+
+```python
+slides = [
+  {
+    "title": "Executive Summary",
+    "data": {"type": "metric", "value": "76 days", ...}
+  },
+  {
+    "title": "Pre-Defined vs AI Insights",
+    "data": {"type": "comparison", ...}
+  },
+  {
+    "title": "Critical Finding: Interview Bottleneck",
+    "data": {"type": "analysis", ...}
+  },
+  {
+    "title": "Recommendation: Streamline Process",
+    "data": {"type": "recommendation", ...}
+  },
+  # ... more slides
+]
+
+# AI calls the tool
+Generate_AI_PowerPoint(
+  presentation_title="Q3 2023 Recruiting Analysis",
+  slides=json.dumps(slides),
+  output_filename="Q3_Analysis.pptx"
+)
+```
+
+### Benefits
+
+1. **Complete Creative Control**
+   - AI decides slide order, content, and emphasis
+   - Can create 5 slides or 50 slides based on insights
+   - Adapts to data complexity
+
+2. **Context Attribution**
+   - AI can cite which context files informed each insight
+   - Distinguishes pre-defined vs AI-generated insights
+   - Transparent analysis methodology
+
+3. **Professional Output**
+   - Consistent branding and formatting
+   - Multiple layout options for different content types
+   - Ready for executive presentation
+
+4. **Generalized System**
+   - Works for any type of analysis (not just HR)
+   - Extensible slide types
+   - Reusable across different datasets
+
+### Best Practices
+
+**For AI:**
+1. Start with executive summary (metric slide)
+2. Compare pre-defined vs AI insights (comparison slide)
+3. Deep dive into key findings (analysis slides)
+4. Provide actionable recommendations (recommendation slides)
+5. Include context attribution in slides
+6. End with summary of recommendations
+
+**For Developers:**
+1. Add new slide types to PowerPointHelper as needed
+2. Keep slide templates flexible and reusable
+3. Ensure consistent styling across all slide types
+4. Test with various content lengths
+
+---
+
 ## Summary
 
 **Your metrics provide the foundation. AI builds the insights.**
@@ -215,5 +465,6 @@ To manage token usage efficiently:
 - ✅ Raw data access enables creative pattern discovery
 - ✅ Business context makes recommendations actionable
 - ✅ AI can think beyond pre-defined rules
+- ✅ **AI-driven PowerPoint generation creates custom presentations**
 
-This hybrid approach gives you the best of both worlds: reliable metrics + intelligent insights.
+This hybrid approach gives you the best of both worlds: reliable metrics + intelligent insights + professional presentations.
