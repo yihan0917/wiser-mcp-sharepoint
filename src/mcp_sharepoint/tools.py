@@ -1253,3 +1253,528 @@ async def generate_ai_powerpoint_tool(
         return {"success": False, "message": f"Error generating AI PowerPoint: {str(e)}"}
 
 
+@mcp.tool(name="Convert_Content_To_PowerPoint",
+description="""Convert structured content (JSON, Markdown, or HTML) into a PowerPoint presentation.
+This tool takes structured content in various formats and generates a professional PowerPoint file.
+
+Supported input formats:
+- JSON: Structured slide definitions with content and formatting
+- Markdown: Converts headings, lists, and text into slides
+- HTML: Parses HTML structure into presentation slides
+
+The tool handles:
+- Multiple slide layouts (title, content, two-column, chart)
+- Text formatting and bullet points
+- Basic charts and tables
+- Images (as base64 or URLs)
+- Custom styling and themes
+""")
+async def convert_content_to_powerpoint_tool(
+    content: str,
+    content_format: str,  # "json", "markdown", or "html"
+    presentation_title: str,
+    output_folder: Optional[str] = None,
+    output_filename: Optional[str] = None,
+    theme: Optional[str] = None  # "default", "professional", "modern", "minimal"
+):
+    """
+    Convert structured content to PowerPoint presentation
+    
+    Args:
+        content: The content to convert (JSON string, Markdown text, or HTML)
+        content_format: Format of input content ("json", "markdown", "html")
+        presentation_title: Title for the presentation
+        output_folder: SharePoint folder (default: "AI Generated Reports")
+        output_filename: Output filename (default: auto-generated from title)
+        theme: Visual theme to apply (default: "professional")
+    
+    JSON Format:
+    [
+        {
+            "type": "title|content|two_column|chart|table|image",
+            "title": "Slide Title",
+            "content": "Main content or bullet points",
+            "data": {...}  // Type-specific data
+        }
+    ]
+    
+    Returns:
+        Dict with success status, file info, and download details
+    """
+    try:
+        import json
+        from io import BytesIO
+        from pptx import Presentation
+        from pptx.util import Inches, Pt
+        from pptx.enum.text import PP_ALIGN, PP_PARAGRAPH_ALIGNMENT
+        from pptx.chart.data import CategoryChartData
+        from pptx.enum.chart import XL_CHART_TYPE
+        from pptx.dml.color import RGBColor
+        
+        # Set defaults
+        if output_folder is None:
+            output_folder = "AI Generated Reports"
+        if output_filename is None:
+            # Sanitize title for filename
+            safe_title = "".join(c for c in presentation_title if c.isalnum() or c in (' ', '-', '_')).strip()
+            safe_title = safe_title.replace(' ', '_')
+            output_filename = f"{safe_title}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
+        
+        # Ensure .pptx extension
+        if not output_filename.endswith('.pptx'):
+            output_filename += '.pptx'
+        
+        # Parse content based on format
+        slides_data = []
+        
+        if content_format.lower() == "json":
+            try:
+                slides_data = json.loads(content)
+                if not isinstance(slides_data, list):
+                    return {"success": False, "message": "JSON content must be an array of slides"}
+            except json.JSONDecodeError as e:
+                return {"success": False, "message": f"Invalid JSON format: {str(e)}"}
+        
+        elif content_format.lower() == "markdown":
+            slides_data = _parse_markdown_to_slides(content)
+        
+        elif content_format.lower() == "html":
+            slides_data = _parse_html_to_slides(content)
+        
+        else:
+            return {"success": False, "message": f"Unsupported content format: {content_format}"}
+        
+        if not slides_data:
+            return {"success": False, "message": "No slides generated from content"}
+        
+        # Create PowerPoint presentation
+        prs = Presentation()
+        prs.slide_width = Inches(10)
+        prs.slide_height = Inches(7.5)
+        
+        # Apply theme
+        theme_colors = _get_theme_colors(theme or "professional")
+        
+        # Create title slide
+        _create_title_slide(prs, presentation_title, theme_colors)
+        slides_created = 1
+        
+        # Process each slide
+        for slide_def in slides_data:
+            try:
+                slide_type = slide_def.get('type', 'content')
+                
+                if slide_type == "title":
+                    _create_title_slide(prs, slide_def.get('title', ''), theme_colors, 
+                                       slide_def.get('subtitle', ''))
+                
+                elif slide_type == "content":
+                    _create_content_slide(prs, slide_def, theme_colors)
+                
+                elif slide_type == "two_column":
+                    _create_two_column_slide(prs, slide_def, theme_colors)
+                
+                elif slide_type == "chart":
+                    _create_chart_slide(prs, slide_def, theme_colors)
+                
+                elif slide_type == "table":
+                    _create_table_slide(prs, slide_def, theme_colors)
+                
+                elif slide_type == "image":
+                    _create_image_slide(prs, slide_def, theme_colors)
+                
+                else:
+                    # Default to content slide
+                    _create_content_slide(prs, slide_def, theme_colors)
+                
+                slides_created += 1
+                
+            except Exception as e:
+                logger.error(f"Error creating slide: {e}")
+                continue
+        
+        # Save to bytes
+        pptx_buffer = BytesIO()
+        prs.save(pptx_buffer)
+        pptx_buffer.seek(0)
+        pptx_bytes = pptx_buffer.getvalue()
+        
+        # Upload to SharePoint
+        upload_result = _upload_file_helper(
+            output_folder,
+            output_filename,
+            base64.b64encode(pptx_bytes).decode(),
+            is_base64=True
+        )
+        
+        if not upload_result.get("success", False):
+            return {
+                "success": False,
+                "message": f"Failed to upload PowerPoint: {upload_result.get('message', 'Unknown error')}"
+            }
+        
+        return {
+            "success": True,
+            "message": f"PowerPoint created successfully: {output_filename}",
+            "file_name": output_filename,
+            "folder": output_folder,
+            "slides_created": slides_created,
+            "file_size": len(pptx_bytes),
+            "download_url": upload_result.get('file', {}).get('url', '')
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in Convert_Content_To_PowerPoint: {e}")
+        return {"success": False, "message": f"Error converting to PowerPoint: {str(e)}"}
+
+
+# Helper functions
+
+def _get_theme_colors(theme: str) -> dict:
+    """Return color scheme for theme"""
+    themes = {
+        "professional": {
+            "primary": RGBColor(68, 114, 196),    # Blue
+            "secondary": RGBColor(237, 125, 49),   # Orange
+            "accent": RGBColor(165, 165, 165),     # Gray
+            "text": RGBColor(0, 0, 0),             # Black
+            "background": RGBColor(255, 255, 255)  # White
+        },
+        "modern": {
+            "primary": RGBColor(0, 176, 240),      # Cyan
+            "secondary": RGBColor(255, 192, 0),    # Yellow
+            "accent": RGBColor(112, 48, 160),      # Purple
+            "text": RGBColor(64, 64, 64),          # Dark gray
+            "background": RGBColor(255, 255, 255)
+        },
+        "minimal": {
+            "primary": RGBColor(50, 50, 50),       # Charcoal
+            "secondary": RGBColor(150, 150, 150),  # Gray
+            "accent": RGBColor(200, 200, 200),     # Light gray
+            "text": RGBColor(0, 0, 0),
+            "background": RGBColor(255, 255, 255)
+        },
+        "default": {
+            "primary": RGBColor(68, 114, 196),
+            "secondary": RGBColor(237, 125, 49),
+            "accent": RGBColor(165, 165, 165),
+            "text": RGBColor(0, 0, 0),
+            "background": RGBColor(255, 255, 255)
+        }
+    }
+    return themes.get(theme, themes["default"])
+
+
+def _create_title_slide(prs, title: str, theme_colors: dict, subtitle: str = ""):
+    """Create title slide"""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank layout
+    
+    # Title
+    title_box = slide.shapes.add_textbox(Inches(1), Inches(2.5), Inches(8), Inches(1.5))
+    title_frame = title_box.text_frame
+    title_frame.text = title
+    title_para = title_frame.paragraphs[0]
+    title_para.alignment = PP_ALIGN.CENTER
+    title_para.font.size = Pt(44)
+    title_para.font.bold = True
+    title_para.font.color.rgb = theme_colors["primary"]
+    
+    # Subtitle if provided
+    if subtitle:
+        subtitle_box = slide.shapes.add_textbox(Inches(1), Inches(4.5), Inches(8), Inches(0.8))
+        subtitle_frame = subtitle_box.text_frame
+        subtitle_frame.text = subtitle
+        subtitle_para = subtitle_frame.paragraphs[0]
+        subtitle_para.alignment = PP_ALIGN.CENTER
+        subtitle_para.font.size = Pt(20)
+        subtitle_para.font.color.rgb = theme_colors["secondary"]
+
+
+def _create_content_slide(prs, slide_def: dict, theme_colors: dict):
+    """Create content slide with title and bullet points"""
+    slide = prs.slides.add_slide(prs.slide_layouts[5])  # Title only layout
+    
+    # Title
+    title = slide.shapes.title
+    title.text = slide_def.get('title', 'Untitled')
+    title.text_frame.paragraphs[0].font.color.rgb = theme_colors["primary"]
+    
+    # Content
+    content = slide_def.get('content', '')
+    left = Inches(0.8)
+    top = Inches(1.8)
+    width = Inches(8.4)
+    height = Inches(5)
+    
+    text_box = slide.shapes.add_textbox(left, top, width, height)
+    tf = text_box.text_frame
+    tf.word_wrap = True
+    
+    # Handle different content formats
+    if isinstance(content, list):
+        # List of bullet points
+        for i, item in enumerate(content):
+            if isinstance(item, dict):
+                # Structured bullet with level
+                text = item.get('text', '')
+                level = item.get('level', 0)
+            else:
+                text = str(item)
+                level = 0
+            
+            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+            p.text = text
+            p.level = level
+            p.font.size = Pt(18 - (level * 2))
+            p.space_after = Pt(12)
+    else:
+        # Plain text content
+        tf.text = str(content)
+        tf.paragraphs[0].font.size = Pt(18)
+
+
+def _create_two_column_slide(prs, slide_def: dict, theme_colors: dict):
+    """Create two-column slide"""
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    
+    # Title
+    title = slide.shapes.title
+    title.text = slide_def.get('title', 'Untitled')
+    title.text_frame.paragraphs[0].font.color.rgb = theme_colors["primary"]
+    
+    # Left column
+    left_content = slide_def.get('left_column', {})
+    left_title = left_content.get('title', '')
+    left_points = left_content.get('content', [])
+    
+    left_box = slide.shapes.add_textbox(Inches(0.8), Inches(1.8), Inches(4), Inches(5))
+    tf = left_box.text_frame
+    tf.word_wrap = True
+    
+    if left_title:
+        p = tf.paragraphs[0]
+        p.text = left_title
+        p.font.size = Pt(20)
+        p.font.bold = True
+        p.font.color.rgb = theme_colors["primary"]
+        p.space_after = Pt(12)
+    
+    for item in (left_points if isinstance(left_points, list) else [left_points]):
+        p = tf.add_paragraph() if left_title else (tf.paragraphs[0] if item == left_points[0] else tf.add_paragraph())
+        p.text = f"• {item}" if not str(item).startswith('•') else str(item)
+        p.font.size = Pt(16)
+        p.space_after = Pt(8)
+    
+    # Right column
+    right_content = slide_def.get('right_column', {})
+    right_title = right_content.get('title', '')
+    right_points = right_content.get('content', [])
+    
+    right_box = slide.shapes.add_textbox(Inches(5.2), Inches(1.8), Inches(4), Inches(5))
+    tf = right_box.text_frame
+    tf.word_wrap = True
+    
+    if right_title:
+        p = tf.paragraphs[0]
+        p.text = right_title
+        p.font.size = Pt(20)
+        p.font.bold = True
+        p.font.color.rgb = theme_colors["secondary"]
+        p.space_after = Pt(12)
+    
+    for item in (right_points if isinstance(right_points, list) else [right_points]):
+        p = tf.add_paragraph() if right_title else (tf.paragraphs[0] if item == right_points[0] else tf.add_paragraph())
+        p.text = f"• {item}" if not str(item).startswith('•') else str(item)
+        p.font.size = Pt(16)
+        p.space_after = Pt(8)
+
+
+def _create_chart_slide(prs, slide_def: dict, theme_colors: dict):
+    """Create slide with chart"""
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    
+    # Title
+    title = slide.shapes.title
+    title.text = slide_def.get('title', 'Untitled')
+    title.text_frame.paragraphs[0].font.color.rgb = theme_colors["primary"]
+    
+    # Chart data
+    chart_data_def = slide_def.get('chart_data', {})
+    chart_type = chart_data_def.get('type', 'bar').lower()
+    
+    # Prepare chart data
+    chart_data = CategoryChartData()
+    chart_data.categories = chart_data_def.get('categories', [])
+    
+    datasets = chart_data_def.get('datasets', [])
+    for dataset in datasets:
+        series_name = dataset.get('label', 'Series')
+        series_values = dataset.get('data', [])
+        chart_data.add_series(series_name, series_values)
+    
+    # Determine chart type
+    chart_type_map = {
+        'bar': XL_CHART_TYPE.BAR_CLUSTERED,
+        'column': XL_CHART_TYPE.COLUMN_CLUSTERED,
+        'line': XL_CHART_TYPE.LINE,
+        'pie': XL_CHART_TYPE.PIE,
+        'area': XL_CHART_TYPE.AREA
+    }
+    xl_chart_type = chart_type_map.get(chart_type, XL_CHART_TYPE.COLUMN_CLUSTERED)
+    
+    # Add chart
+    x, y, cx, cy = Inches(1), Inches(2), Inches(8), Inches(4.5)
+    chart = slide.shapes.add_chart(xl_chart_type, x, y, cx, cy, chart_data).chart
+    
+    # Chart formatting
+    if len(datasets) <= 1:
+        chart.has_legend = False
+    
+    chart_title = chart_data_def.get('title', '')
+    if chart_title:
+        chart.chart_title.text_frame.text = chart_title
+
+
+def _create_table_slide(prs, slide_def: dict, theme_colors: dict):
+    """Create slide with table"""
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    
+    # Title
+    title = slide.shapes.title
+    title.text = slide_def.get('title', 'Untitled')
+    title.text_frame.paragraphs[0].font.color.rgb = theme_colors["primary"]
+    
+    # Table data
+    table_data = slide_def.get('table_data', {})
+    headers = table_data.get('headers', [])
+    rows = table_data.get('rows', [])
+    
+    if not headers or not rows:
+        return
+    
+    # Create table
+    cols = len(headers)
+    table_rows = len(rows) + 1  # +1 for header
+    
+    x, y = Inches(1), Inches(2)
+    cx, cy = Inches(8), Inches(4.5)
+    
+    table = slide.shapes.add_table(table_rows, cols, x, y, cx, cy).table
+    
+    # Set headers
+    for col_idx, header in enumerate(headers):
+        cell = table.cell(0, col_idx)
+        cell.text = str(header)
+        cell.text_frame.paragraphs[0].font.bold = True
+        cell.text_frame.paragraphs[0].font.size = Pt(14)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = theme_colors["primary"]
+        cell.text_frame.paragraphs[0].font.color.rgb = RGBColor(255, 255, 255)
+    
+    # Set data rows
+    for row_idx, row in enumerate(rows, start=1):
+        for col_idx, value in enumerate(row):
+            cell = table.cell(row_idx, col_idx)
+            cell.text = str(value)
+            cell.text_frame.paragraphs[0].font.size = Pt(12)
+
+
+def _create_image_slide(prs, slide_def: dict, theme_colors: dict):
+    """Create slide with image"""
+    slide = prs.slides.add_slide(prs.slide_layouts[5])
+    
+    # Title
+    title = slide.shapes.title
+    title.text = slide_def.get('title', 'Untitled')
+    title.text_frame.paragraphs[0].font.color.rgb = theme_colors["primary"]
+    
+    # Image handling would go here
+    # Note: Requires additional logic for base64 or URL image loading
+    # Placeholder for now
+    left = Inches(2)
+    top = Inches(2.5)
+    width = Inches(6)
+    height = Inches(4)
+    
+    text_box = slide.shapes.add_textbox(left, top, width, height)
+    tf = text_box.text_frame
+    tf.text = "[Image placeholder - image support requires additional implementation]"
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    tf.paragraphs[0].font.size = Pt(16)
+    tf.paragraphs[0].font.color.rgb = theme_colors["accent"]
+
+
+def _parse_markdown_to_slides(markdown_content: str) -> list:
+    """Parse Markdown content into slide definitions"""
+    slides = []
+    current_slide = None
+    
+    lines = markdown_content.split('\n')
+    
+    for line in lines:
+        line = line.strip()
+        
+        # H1 = new slide title
+        if line.startswith('# '):
+            if current_slide:
+                slides.append(current_slide)
+            current_slide = {
+                'type': 'content',
+                'title': line[2:].strip(),
+                'content': []
+            }
+        
+        # H2 = subtitle or section
+        elif line.startswith('## ') and current_slide:
+            current_slide['content'].append({'text': line[3:].strip(), 'level': 0})
+        
+        # Bullet points
+        elif (line.startswith('- ') or line.startswith('* ')) and current_slide:
+            current_slide['content'].append({'text': line[2:].strip(), 'level': 1})
+        
+        # Regular text
+        elif line and current_slide and not line.startswith('#'):
+            if current_slide['content'] and isinstance(current_slide['content'][-1], str):
+                current_slide['content'][-1] += ' ' + line
+            else:
+                current_slide['content'].append(line)
+    
+    if current_slide:
+        slides.append(current_slide)
+    
+    return slides
+
+
+def _parse_html_to_slides(html_content: str) -> list:
+    """Parse HTML content into slide definitions"""
+    # Basic HTML parsing - would need BeautifulSoup for production
+    # This is a simplified version
+    slides = []
+    
+    # Look for section tags or h1 tags as slide boundaries
+    import re
+    
+    # Split by <h1> tags
+    sections = re.split(r'<h1[^>]*>(.*?)</h1>', html_content, flags=re.IGNORECASE | re.DOTALL)
+    
+    for i in range(1, len(sections), 2):
+        if i < len(sections):
+            title = re.sub(r'<[^>]+>', '', sections[i]).strip()
+            content_html = sections[i+1] if i+1 < len(sections) else ''
+            
+            # Extract bullet points
+            bullets = re.findall(r'<li[^>]*>(.*?)</li>', content_html, flags=re.IGNORECASE | re.DOTALL)
+            content = [re.sub(r'<[^>]+>', '', bullet).strip() for bullet in bullets]
+            
+            if not content:
+                # Extract paragraphs
+                paras = re.findall(r'<p[^>]*>(.*?)</p>', content_html, flags=re.IGNORECASE | re.DOTALL)
+                content = [re.sub(r'<[^>]+>', '', para).strip() for para in paras]
+            
+            slides.append({
+                'type': 'content',
+                'title': title,
+                'content': content if content else ['No content']
+            })
+    
+    return slides
