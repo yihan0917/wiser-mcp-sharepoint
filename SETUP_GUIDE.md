@@ -452,9 +452,150 @@ TOOL_CONTEXT_MAP = {
 - ✅ **Category-Based Organization** - Context grouped by purpose
 - ✅ **Tool-Specific Injection** - Only relevant context sent to each tool
 - ✅ **Search Functionality** - Search across all context files
+- ✅ **Targeted File Search** - Search within specific context files 🆕
+- ✅ **File Discovery** - List all available context files 🆕
 - ✅ **Column Matching** - Match Excel columns to definitions
 - ✅ **Context Summary** - Get statistics on loaded context
 - ✅ **Backward Compatible** - Works with existing tools without changes
+
+### Context Search Tools 🆕
+
+#### 1. **Search All Context** (Existing)
+```python
+mcp2_Search_All_Context(
+    search_term="time-to-hire",
+    categories=["recruiting", "metrics"]  # Optional: limit to specific categories
+)
+```
+- Searches across all 23+ context files
+- Can filter by categories (columns, metrics, business, recruiting, roles, operations)
+- Returns matches with file names, categories, and excerpts
+
+#### 2. **Search Specific Context File** (New)
+```python
+mcp2_Search_Specific_Context_File(
+    search_term="L5 expectations",
+    context_file_name="software_engineer_role_description"  # .md extension optional
+)
+```
+- **Faster searches** - Only searches within the specified file
+- **Targeted results** - Get specific information from exact file needed
+- **User-friendly** - Accepts file names with or without `.md` extension
+- **Error handling** - Shows available files if requested file doesn't exist
+- **Context preservation** - Shows line numbers and surrounding lines
+
+#### 3. **List Available Context Files** (New)
+```python
+mcp2_List_Available_Context_Files()
+```
+- Shows all 23 context files organized by category
+- Helps users discover what files they can search
+- Provides usage instructions for the search tools
+
+#### 4. **Find Relevant Context Files** (New - Smart Matching) 🆕
+```python
+mcp2_Find_Relevant_Context_Files(
+    description="software engineer requirements",  # Natural language description
+    max_results=3  # Optional: number of matches to return
+)
+```
+- **Intelligent file matching** - Maps natural language to specific context files
+- **Keyword-based scoring** - Ranks files by relevance using 200+ keywords
+- **Smart suggestions** - Provides usage instructions for best matches
+- **Comprehensive coverage** - Handles role descriptions, business context, hiring guides
+
+### Context Search Usage Examples
+
+**Example 1: Compare with Wiser's role descriptions**
+```
+User prompt: "Compare this job description with Wiser's Software Engineer role description"
+→ Use: Search_Specific_Context_File(search_term="job description", context_file_name="software_engineer_role_description")
+```
+
+**Example 2: Check hiring guidelines**
+```
+User prompt: "What does Wiser's hiring guide say about time-to-hire?"
+→ Use: Search_Specific_Context_File(search_term="time-to-hire", context_file_name="hiring_guide")
+```
+
+**Example 3: Find career path information**
+```
+User prompt: "What are the L5 requirements at Wiser?"
+→ Use: Search_Specific_Context_File(search_term="L5", context_file_name="engineering_career_path")
+```
+
+**Example 4: Discover available files**
+```
+User prompt: "What context files are available?"
+→ Use: List_Available_Context_Files()
+```
+
+**Example 5: Natural language file matching** 🆕
+```
+User prompt: "What are Wiser's software engineer requirements?"
+→ Step 1: Find_Relevant_Context_Files("software engineer requirements")
+→ Step 2: Search_Specific_Context_File("requirements", "software_engineer_role_description.md")
+```
+
+**Example 6: Fuzzy matching with typos** 🆕
+```
+User prompt: "Check company hiring standard"
+→ Step 1: Find_Relevant_Context_Files("company hiring standard") 
+→ Returns: hiring_guide.md (matched keywords: ['hiring'])
+→ Step 2: Search_Specific_Context_File("standard", "hiring_guide.md")
+```
+
+**Example 7: Automatic fallback** 🆕
+```
+User tries: Search_Specific_Context_File("role", "software enginer role")  # Typo in filename
+→ Tool automatically suggests: software_engineer_role_description.md
+→ Provides corrected usage: Search_Specific_Context_File("role", "software_engineer_role_description.md")
+```
+
+### Benefits of Smart Context Search System 🆕
+
+1. **Performance** - Faster searches by targeting specific files instead of all 23+ files
+2. **Precision** - Get exact information from the file you need
+3. **Natural Language Support** - Use descriptive terms like "software engineer requirements" instead of exact file names
+4. **Intelligent Matching** - 200+ keywords automatically map descriptions to relevant files
+5. **User Experience** - Simple file name input (with or without .md extension)
+6. **Discovery** - Easy way to see what context is available
+7. **Context Preservation** - Line numbers and surrounding text for better understanding
+8. **Smart Error Recovery** - Automatic fuzzy matching suggestions when exact matches fail
+9. **Relevance Scoring** - Files ranked by keyword match relevance
+10. **Comprehensive Coverage** - Handles all role descriptions, business context, and process files
+
+### Fuzzy Matching Keyword Coverage 🆕
+
+**Role Files:**
+- **Software Engineer**: 'developer', 'programming', 'coding', 'technical role', 'backend', 'frontend', 'full stack'
+- **Data Management**: 'data engineer', 'database', 'data pipeline', 'etl', 'data architecture', 'data platform'
+- **ML/DS/DA**: 'machine learning', 'data scientist', 'analytics', 'ai', 'artificial intelligence', 'statistics'
+- **Leadership**: 'engineering manager', 'tech lead', 'director', 'vp engineering', 'cto', 'management'
+- **Operations**: 'retail', 'store operations', 'user support', 'retail intelligence', 'data validation'
+
+**Business & Process Files:**
+- **Company**: 'mission', 'values', 'culture', 'vision', 'organization', 'corporate values'
+- **Engineering**: 'tech stack', 'engineering practices', 'development process', 'engineering strategy'
+- **Hiring**: 'recruitment', 'interview', 'hiring process', 'candidate', 'recruiting standards'
+- **Career**: 'promotion', 'levels', 'career progression', 'l1-l8', 'career framework', 'seniority'
+- **Data**: 'columns', 'data fields', 'excel columns', 'metrics', 'kpi', 'performance indicators'
+
+### Smart Search Workflow 🆕
+
+```
+User Input: "What are Wiser's software engineer requirements?"
+    ↓
+AI detects natural language: "software engineer requirements"
+    ↓
+Calls: Find_Relevant_Context_Files("software engineer requirements")
+    ↓
+Returns: software_engineer_role_description.md (score: 4, keywords: ['software engineer'])
+    ↓
+Calls: Search_Specific_Context_File("requirements", "software_engineer_role_description.md")
+    ↓
+Returns: Relevant sections about engineer requirements with line numbers
+```
 
 ### Benefits
 

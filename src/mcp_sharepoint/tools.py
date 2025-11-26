@@ -717,6 +717,252 @@ async def search_all_context_tool(search_term: str, categories: list = None):
     except Exception as e:
         return {"success": False, "message": f"Error searching context: {str(e)}"}
 
+@mcp.tool(name="Search_Specific_Context_File", description="Search within a specific context file by name. Use this when you need to search within a particular Wiser context file like 'software_engineer_role_description' or 'hiring_guide'.")
+async def search_specific_context_file_tool(search_term: str, context_file_name: str):
+    """Search within a specific context file for targeted information
+    
+    Args:
+        search_term: The term to search for
+        context_file_name: Name of the specific context file to search (e.g., 'software_engineer_role_description', 'hiring_guide', 'engineering_career_path')
+    """
+    try:
+        # Normalize the file name - add .md extension if not present
+        if not context_file_name.endswith('.md'):
+            context_file_name = context_file_name + '.md'
+        
+        # Search through all categories to find the file
+        file_content = None
+        file_category = None
+        
+        for category, files in context_manager.contexts.items():
+            if context_file_name in files:
+                file_content = files[context_file_name]
+                file_category = category
+                break
+        
+        if file_content is None:
+            # Try fuzzy matching if exact file not found
+            try:
+                # Use the fuzzy matching logic from Find_Relevant_Context_Files
+                fuzzy_result = await find_relevant_context_files_tool(context_file_name.replace('.md', ''), max_results=3)
+                
+                if fuzzy_result.get("success") and fuzzy_result.get("matches_found", 0) > 0:
+                    suggested_files = [result['filename'] for result in fuzzy_result['results']]
+                    return {
+                        "success": False,
+                        "message": f"Context file '{context_file_name}' not found. Did you mean one of these files?",
+                        "suggested_files": suggested_files,
+                        "fuzzy_matches": fuzzy_result['results'],
+                        "suggestion": f"Try using: Search_Specific_Context_File(search_term='{search_term}', context_file_name='{suggested_files[0]}')"
+                    }
+            except:
+                pass  # Fall back to original error if fuzzy matching fails
+            
+            # Original error message as fallback
+            available_files = []
+            for files in context_manager.contexts.values():
+                available_files.extend(files.keys())
+            
+            return {
+                "success": False, 
+                "message": f"Context file '{context_file_name}' not found. Available files: {', '.join(sorted(available_files))}"
+            }
+        
+        # Search within the specific file
+        results = []
+        if search_term.lower() in file_content.lower():
+            lines = file_content.split('\n')
+            for i, line in enumerate(lines):
+                if search_term.lower() in line.lower():
+                    # Get context around each match (2 lines before and after)
+                    start = max(0, i - 2)
+                    end = min(len(lines), i + 3)
+                    excerpt = '\n'.join(lines[start:end])
+                    
+                    results.append({
+                        'line_number': i + 1,
+                        'matched_line': line.strip(),
+                        'excerpt': excerpt
+                    })
+        
+        return {
+            "success": True,
+            "search_term": search_term,
+            "context_file": context_file_name,
+            "category": file_category,
+            "result_count": len(results),
+            "results": results,
+            "file_size_chars": len(file_content)
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"Error searching specific context file: {str(e)}"}
+
+@mcp.tool(name="List_Available_Context_Files", description="List all available context files that can be searched individually")
+async def list_available_context_files_tool():
+    """List all available context files organized by category"""
+    try:
+        context_summary = context_manager.get_context_summary()
+        
+        return {
+            "success": True,
+            "total_files": context_summary.get('total_files', 0),
+            "categories": context_summary.get('categories', []),
+            "files_by_category": context_summary.get('files_by_category', {}),
+            "usage_note": "Use 'Search_Specific_Context_File' with any of these file names (with or without .md extension)"
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"Error listing context files: {str(e)}"}
+
+@mcp.tool(name="Find_Relevant_Context_Files", description="Find the most relevant context files based on natural language descriptions like 'software engineer requirements', 'hiring standards', or 'career progression'.")
+async def find_relevant_context_files_tool(description: str, max_results: int = 3):
+    """Find context files that match a natural language description
+    
+    Args:
+        description: Natural language description (e.g., 'software engineer requirements', 'hiring standards', 'company values')
+        max_results: Maximum number of matching files to return (default: 3)
+    """
+    try:
+        # Define keyword mappings for intelligent file matching
+        file_keywords = {
+            # Role-related files
+            'software_engineer_role_description.md': [
+                'software engineer', 'developer', 'programming', 'coding', 'technical role',
+                'engineer requirements', 'software development', 'backend', 'frontend', 'full stack'
+            ],
+            'data_management_role_description.md': [
+                'data engineer', 'data management', 'database', 'data pipeline', 'etl',
+                'data architecture', 'data platform', 'data infrastructure'
+            ],
+            'engineering_leadership_role_description.md': [
+                'engineering manager', 'tech lead', 'engineering leadership', 'team lead',
+                'engineering director', 'vp engineering', 'cto', 'management'
+            ],
+            'ml_ds_da_role_description.md': [
+                'machine learning', 'data scientist', 'data analyst', 'ml engineer',
+                'analytics', 'ai', 'artificial intelligence', 'data science', 'statistics'
+            ],
+            'in_store_operations_role_description.md': [
+                'operations', 'retail', 'store operations', 'field operations',
+                'user support', 'retail intelligence', 'data validation'
+            ],
+            
+            # Business and culture files
+            'company_overview.md': [
+                'company', 'mission', 'values', 'culture', 'vision', 'business',
+                'organization', 'company culture', 'corporate values'
+            ],
+            'engineering_overview.md': [
+                'engineering culture', 'tech stack', 'engineering practices', 'development process',
+                'engineering strategy', 'technology', 'platform', 'architecture'
+            ],
+            
+            # Hiring and career files
+            'hiring_guide.md': [
+                'hiring', 'recruitment', 'interview', 'hiring process', 'recruiting',
+                'candidate', 'interview process', 'hiring standards', 'recruitment process'
+            ],
+            'engineering_career_path.md': [
+                'career path', 'promotion', 'levels', 'career progression', 'advancement',
+                'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'career framework',
+                'job levels', 'seniority', 'career ladder'
+            ],
+            
+            # Data and metrics files
+            'column_definitions.md': [
+                'columns', 'data fields', 'excel columns', 'data definitions',
+                'field definitions', 'data dictionary', 'column meanings'
+            ],
+            'metrics_definitions.md': [
+                'metrics', 'kpi', 'measurements', 'analytics', 'performance indicators',
+                'hiring metrics', 'hr metrics', 'time to hire', 'cost per hire'
+            ]
+        }
+        
+        # Add specific position description files
+        position_files = {
+            'Position-Description-MLE1-DS1.md': ['ml engineer 1', 'data scientist 1', 'entry level ml', 'junior data scientist'],
+            'Position-Description-DA1.md': ['data analyst 1', 'junior analyst', 'entry level analyst'],
+            'Position-Description-MLE2-DS2.md': ['ml engineer 2', 'data scientist 2', 'mid level ml'],
+            'Position-Description-DA2.md': ['data analyst 2', 'mid level analyst'],
+            'Position-Description-SMLE-SDS.md': ['senior ml engineer', 'senior data scientist'],
+            'Position-Description-SDA.md': ['senior data analyst', 'senior analyst'],
+            'Position-Description-LSMLE-LSDS.md': ['lead senior ml engineer', 'lead senior data scientist'],
+            'Position-Description-LSDA.md': ['lead senior data analyst', 'lead senior analyst'],
+            'Position-Description-PMLE-PDS.md': ['principal ml engineer', 'principal data scientist'],
+            'Position-Description-PDA.md': ['principal data analyst', 'principal analyst'],
+            'Position-Description-SEMLDS Manager.md': ['ml manager', 'data science manager', 'engineering manager ml'],
+            'Position-Description-Analytics Manager.md': ['analytics manager', 'data analytics manager']
+        }
+        
+        # Combine all keyword mappings
+        all_keywords = {**file_keywords, **position_files}
+        
+        # Score files based on keyword matches
+        file_scores = {}
+        description_lower = description.lower()
+        
+        for filename, keywords in all_keywords.items():
+            score = 0
+            matched_keywords = []
+            
+            for keyword in keywords:
+                if keyword.lower() in description_lower:
+                    # Give higher scores for exact matches and longer keywords
+                    keyword_score = len(keyword.split()) * 2 if keyword.lower() == description_lower else len(keyword.split())
+                    score += keyword_score
+                    matched_keywords.append(keyword)
+            
+            if score > 0:
+                file_scores[filename] = {
+                    'score': score,
+                    'matched_keywords': matched_keywords
+                }
+        
+        # Sort by score and get top results
+        sorted_files = sorted(file_scores.items(), key=lambda x: x[1]['score'], reverse=True)
+        top_files = sorted_files[:max_results]
+        
+        # Get file categories and prepare results
+        results = []
+        for filename, match_info in top_files:
+            # Find which category this file belongs to
+            file_category = None
+            for category, files in context_manager.contexts.items():
+                if filename in files:
+                    file_category = category
+                    break
+            
+            results.append({
+                'filename': filename,
+                'category': file_category,
+                'relevance_score': match_info['score'],
+                'matched_keywords': match_info['matched_keywords'],
+                'file_exists': filename in [f for files in context_manager.contexts.values() for f in files.keys()]
+            })
+        
+        if not results:
+            # If no matches found, suggest using the general search
+            return {
+                "success": True,
+                "description": description,
+                "matches_found": 0,
+                "suggestion": "No specific files matched your description. Try using 'Search_All_Context' to search across all files, or use 'List_Available_Context_Files' to see all available files.",
+                "results": []
+            }
+        
+        return {
+            "success": True,
+            "description": description,
+            "matches_found": len(results),
+            "results": results,
+            "usage_note": f"Use 'Search_Specific_Context_File' with the filename from the top result: '{results[0]['filename']}'"
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"Error finding relevant context files: {str(e)}"}
+
 # HR Analytics and Data Quality Tools
 @mcp.tool(name="Validate_Excel_Data_Quality", description="Validate data quality and identify issues in Excel HR data")
 async def validate_excel_data_quality_tool(folder_name: str, file_name: str):
