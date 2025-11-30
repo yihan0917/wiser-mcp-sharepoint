@@ -1,3 +1,14 @@
+---
+FILE: hiring_guide.md
+PURPOSE: Comprehensive guide for hiring practices, procedures, and interview processes
+DEPARTMENT: Engineering
+APPLIES_TO: Hiring managers, interviewers, recruiting team
+KEY_SECTIONS: Planning, Job Descriptions, Interview Process, Candidate Evaluation, Onboarding
+COMMON_SEARCHES: hiring process, interview questions, candidate evaluation, job requirements, recruiting, onboarding, interview guidelines, hiring practices, sourcing candidates, budget approval
+RELATED_FILES: engineering_career_path.md, software_engineer_role_description.md
+LAST_UPDATED: 2024-11-30
+---
+
 # Hiring Guide
 
 ## Overview

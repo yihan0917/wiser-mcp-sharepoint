@@ -1,3 +1,14 @@
+---
+FILE: metrics_definitions.md
+PURPOSE: Define HR and recruiting metrics and KPIs for data analysis and reporting
+DEPARTMENT: HR/Recruiting
+APPLIES_TO: HR analysts, recruiting team, managers, data analysts
+KEY_SECTIONS: Time-to-Hire, Cost Metrics, Quality Metrics, Diversity Metrics, Source Analysis
+COMMON_SEARCHES: HR metrics, KPIs, time to hire, cost per hire, recruiting metrics, diversity metrics, source analysis, quality metrics, hiring analytics
+RELATED_FILES: column_definitions.md, hiring_guide.md
+LAST_UPDATED: 2024-11-30
+---
+
 ## HR Analytics & Reporting Metrics
 
 When generating reports from HR/recruiting data, consider these key metrics and breakdowns. Feel free to suggest additional meaningful metrics based on the available data.

@@ -1142,7 +1142,7 @@ async def analyze_hr_file_complete_tool(folder_name: str, file_name: str):
             except:
                 continue  # Skip charts that can't be generated
         
-        # Get context for AI-driven insights
+        # Get context for AI-driven insights (now cached and optimized)
         tool_context = context_manager.get_context_for_tool('Analyze_HR_File_Complete')
         column_types = hr_analytics.detect_column_types(df)
         

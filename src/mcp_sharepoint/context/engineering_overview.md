@@ -1,3 +1,14 @@
+---
+FILE: engineering_overview.md
+PURPOSE: Define Engineering department culture, strategy, and technical vision
+DEPARTMENT: Engineering
+AUDIENCE: Engineering team members, technical staff
+KEY_SECTIONS: Mission & Vision, Technical Strategy, Evolutionary Architecture, Engineering Values
+COMMON_SEARCHES: engineering culture, technical vision, engineering strategy, evolutionary architecture, engineering mission, technical principles, engineering values
+RELATED_FILES: company_overview.md, engineering_career_path.md, software_engineer_role_description.md
+LAST_UPDATED: 2024-11-30
+---
+
 # Engineering Overview
 
 ## Summary

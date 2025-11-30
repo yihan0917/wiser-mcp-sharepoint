@@ -1,3 +1,14 @@
+---
+FILE: software_engineer_role_description.md
+PURPOSE: Define career progression and expectations for individual contributor software engineers
+DEPARTMENT: Engineering
+LEVELS: L1 (Associate) through L8 (Distinguished)
+KEY_SECTIONS: Technical Skills, Delivery, Teamwork/Collaboration/Leadership
+COMMON_SEARCHES: Lead Engineer, Principal Engineer, Staff Engineer, senior expectations, mentorship, L4, L5, L6, career progression, technical leadership, software engineer levels, coding best practices, architectural guidance, cross-team collaboration
+RELATED_FILES: engineering_career_path.md, engineering_leadership_role_description.md
+LAST_UPDATED: 2024-11-30
+---
+
 # Software Engineer Career Path Guidance
 
 This document outlines the career progression for software engineers, detailing expectations across technical skills, delivery capabilities, and teamwork/collaboration/leadership qualities at each level.

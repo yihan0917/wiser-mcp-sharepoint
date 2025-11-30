@@ -1,3 +1,14 @@
+---
+FILE: in_store_operations_role_description.md
+PURPOSE: Define roles and responsibilities for In-Store Operations department positions
+DEPARTMENT: In-Store Operations
+LEVELS: Various operational levels (Specialist, Senior Specialist, Coordinator, Manager)
+KEY_SECTIONS: Retail Intelligence, Data Validation, User Support, Store Operations, Quality Control
+COMMON_SEARCHES: operations roles, retail intelligence, RI, data validation, user support, store operations, quality specialist, operations coordinator, ISPC, REM
+RELATED_FILES: None (separate from Engineering roles)
+LAST_UPDATED: 2024-11-30
+---
+
 # In-Store Operations Role Descriptions
 
 **DEPARTMENT: IN-STORE OPERATIONS**

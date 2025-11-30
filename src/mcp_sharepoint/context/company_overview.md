@@ -1,3 +1,14 @@
+---
+FILE: company_overview.md
+PURPOSE: Provide comprehensive understanding of company mission, vision, business strategy, and market position
+DEPARTMENT: All Departments
+AUDIENCE: All team members across departments
+KEY_SECTIONS: Mission & Vision, Business Strategy, Customer Base, Product Offerings, Market Position
+COMMON_SEARCHES: company mission, vision, business strategy, commerce execution, retailers, brands, competitive advantage, market leader, customer problems, business metrics
+RELATED_FILES: engineering_overview.md
+LAST_UPDATED: 2024-11-30
+---
+
 # Company Overview
 
 ## Summary

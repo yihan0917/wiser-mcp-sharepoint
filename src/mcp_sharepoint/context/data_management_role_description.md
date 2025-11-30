@@ -1,3 +1,14 @@
+---
+FILE: data_management_role_description.md
+PURPOSE: Define career progression for data management professionals including Data Engineers and related roles
+DEPARTMENT: Data Management
+LEVELS: L1 through L8 with Mastery, Architect, and Management tracks at L5+
+KEY_SECTIONS: Technical Skills, Delivery, Teamwork/Collaboration/Leadership, Career Tracks
+COMMON_SEARCHES: data engineer, data management, data architecture, ETL, data governance, data infrastructure, data pipeline, data platform, senior data engineer, lead data engineer, principal data engineer
+RELATED_FILES: engineering_career_path.md, ml_ds_da_role_description.md
+LAST_UPDATED: 2024-11-30
+---
+
 # Data Management Career Path Guidance
 
 This document outlines the career progression for data management professionals, detailing expectations across technical skills, delivery capabilities, and teamwork/collaboration/leadership qualities at each level. At L5 and above, there are three career tracks: Mastery (Individual Contributor), Architect, and Management.

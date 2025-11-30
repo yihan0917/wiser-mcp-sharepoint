@@ -1,3 +1,14 @@
+---
+FILE: engineering_leadership_role_description.md
+PURPOSE: Define career progression for Engineering management track from Manager to CTO
+DEPARTMENT: Engineering
+LEVELS: Engineering Manager through Senior VP/CTO
+KEY_SECTIONS: Technical Excellence, People Leadership, Business Impact, Strategic Vision
+COMMON_SEARCHES: engineering manager, senior engineering manager, director of engineering, engineering leadership, people management, team leadership, performance management, CTO, VP engineering
+RELATED_FILES: engineering_career_path.md, software_engineer_role_description.md
+LAST_UPDATED: 2024-11-30
+---
+
 # Engineering Leadership Career Path Guidance
 
 This document contains the role descriptions for the people leadership track of the Engineering career ladder.
