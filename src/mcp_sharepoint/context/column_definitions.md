@@ -1,14 +1,3 @@
----
-FILE: column_definitions.md
-PURPOSE: Define Excel column meanings for HR and recruiting data analysis
-DEPARTMENT: HR/Recruiting
-APPLIES_TO: HR analysts, recruiting team, data analysts
-KEY_SECTIONS: Recruiter Reports, Personnel Data, Application Tracking, Timing Metrics, Sourcing, Costs
-COMMON_SEARCHES: column definitions, Excel columns, HR data, recruiting metrics, job title, hiring manager, time to hire, source, application tracking, personnel data
-RELATED_FILES: metrics_definitions.md, hiring_guide.md
-LAST_UPDATED: 2024-11-30
----
-
 # Excel Column Definitions Dictionary
 
 This file contains definitions for Excel columns that may appear in SharePoint files. When analyzing Excel files, the system will automatically provide context for any columns found in this dictionary.

@@ -25,9 +25,6 @@ pip install pymupdf>=1.23.0 python-docx>=1.1.0 python-pptx>=0.6.21 openpyxl>=3.1
 
 # Analytics and visualization (NEW in v0.2.0)
 pip install pandas>=2.0.0 numpy>=1.24.0 plotly>=5.17.0
-
-# Configuration and metadata parsing (NEW in v0.6.0)
-pip install PyYAML>=6.0.0
 ```
 
 ### Installation Verification
@@ -39,7 +36,6 @@ import mcp_sharepoint
 import plotly
 import pandas
 import numpy
-import yaml
 print("✅ All dependencies installed successfully!")
 ```
 
@@ -89,108 +85,6 @@ print("✅ All dependencies installed successfully!")
 - ✅ **Flexible Recommendations** - AI generates custom insights based on actual data patterns
 - ✅ **Business Context Integration** - 2000-3000 chars of context per tool call
 - ✅ **Column Definition Matching** - Automatic lookup of column meanings from context files
-
-### v0.6.0 - Metadata-Enhanced Context Search 🆕
-- ✅ **YAML Frontmatter Support** - Context files now support structured metadata headers
-- ✅ **Metadata-First Search** - Prioritizes curated search terms over content scanning
-- ✅ **Optimized Search Performance** - 50-80% faster search for common queries
-- ✅ **Enhanced Relevance Scoring** - Metadata matches (1.5) > Content matches (1.0)
-- ✅ **Two-Phase Search Strategy** - Metadata first, content fallback for comprehensive coverage
-- ✅ **12 Enhanced Files** - Key context files enhanced with searchable metadata
-- ✅ **Backward Compatibility** - Files without metadata continue working via content search
-- ✅ **PyYAML Integration** - Added PyYAML dependency for metadata parsing
-
-#### Key Improvements in v0.6.0 - Metadata-Enhanced Context Search
-
-**1. YAML Frontmatter Metadata System**
-
-Context files now support structured metadata headers using YAML frontmatter:
-
-```yaml
----
-FILE: software_engineer_role_description.md
-PURPOSE: Define career progression and expectations for individual contributor software engineers
-DEPARTMENT: Engineering
-LEVELS: L1 (Associate) through L8 (Distinguished)
-KEY_SECTIONS: Technical Skills, Delivery, Teamwork/Collaboration/Leadership
-COMMON_SEARCHES: Lead Engineer, Principal Engineer, Staff Engineer, senior expectations, mentorship, L4, L5, L6, career progression, technical leadership
-RELATED_FILES: engineering_career_path.md, engineering_leadership_role_description.md
-LAST_UPDATED: 2024-11-30
----
-
-# Your existing content starts here...
-```
-
-**2. Two-Phase Search Architecture (`context_manager.py`)**
-
-```python
-def fast_search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-    """Optimized search: metadata-first with content fallback"""
-    
-    # Phase 1: Metadata search (if any files have metadata)
-    if self.metadata_index:
-        for filename, metadata in self.metadata_index.items():
-            # Check COMMON_SEARCHES field (highest priority - score 1.5)
-            common_searches = str(metadata.get('COMMON_SEARCHES', '')).lower()
-            if query_lower in common_searches:
-                results.append({
-                    'match_type': 'metadata_exact',
-                    'score': 1.5  # Higher than content matches
-                })
-            
-            # Check PURPOSE and KEY_SECTIONS (medium priority - score 1.2)
-            elif query_lower in purpose or query_lower in key_sections:
-                results.append({
-                    'match_type': 'metadata_partial', 
-                    'score': 1.2
-                })
-        
-        # If good metadata matches found, skip content search entirely
-        if results and results[0]['score'] >= 1.2:
-            return sorted(results, key=lambda x: x['score'], reverse=True)
-    
-    # Phase 2: Content search (only if no metadata matches OR need more results)
-    # Uses existing intelligent term extraction (1,259 indexed terms)
-```
-
-**3. Enhanced Files with Metadata (12 files)**
-
-The following key context files have been enhanced with searchable metadata:
-
-- **Core System Files**: `_context_index.md`, `column_definitions.md`, `metrics_definitions.md`, `company_overview.md`
-- **Engineering Context**: `engineering_overview.md`, `engineering_career_path.md`, `software_engineer_role_description.md`, `engineering_leadership_role_description.md`
-- **Specialized Roles**: `ml_ds_da_role_description.md`, `data_management_role_description.md`, `in_store_operations_role_description.md`
-- **Process Documentation**: `hiring_guide.md`
-
-**4. Search Performance Improvements**
-
-| Search Type | Before v0.6.0 | After v0.6.0 | Improvement |
-|-------------|---------------|--------------|-------------|
-| **Common queries** (mentorship, L5, career progression) | Content scan (1,259 terms) | Direct metadata match | 50-80% faster |
-| **Specific terms** (data engineer, HR metrics) | Partial content matches | Exact metadata matches | 60% faster |
-| **Uncommon queries** | Content search | Content search (fallback) | Same speed |
-
-**5. Relevance Scoring System**
-
-- **metadata_exact**: 1.5 (highest - direct COMMON_SEARCHES match)
-- **metadata_partial**: 1.2 (PURPOSE/KEY_SECTIONS match)
-- **content_exact**: 1.0 (existing content search)
-- **content_partial**: 0.7 (partial content match)
-
-**6. Backward Compatibility**
-
-- **Files with metadata**: Use optimized Phase 1 search
-- **Files without metadata**: Continue using Phase 2 content search
-- **Position-Description files**: Automatically skip Phase 1, use intelligent content extraction
-- **No breaking changes**: Existing functionality preserved
-
-**7. Dependencies Updated**
-
-Added PyYAML to `pyproject.toml`:
-```toml
-# Configuration and metadata parsing
-"PyYAML>=6.0.0",
-```
 
 #### Key Improvements in v0.4.0
 
@@ -450,38 +344,10 @@ python test_context_integration.py
 **Expected output:**
 ```
 ✅ All tests passed! Context manager is working correctly.
-✓ Total files loaded: 24
-✓ Total characters: 123,137+
-✓ Categories: index, columns, metrics, business, recruiting, dept_engineering, dept_data_management, dept_operations
+✓ Total files loaded: 22
+✓ Total characters: 123,137
+✓ Categories: columns, metrics, business, recruiting, roles
 ✓ Column definitions: 73
-✓ Files with metadata: 12
-```
-
-### Testing Metadata-Enhanced Search (v0.6.0)
-
-Test the new metadata search functionality:
-
-```python
-from src.mcp_sharepoint.context_manager import context_manager
-
-# Test metadata search (should return score 1.5)
-results = context_manager.fast_search("mentorship")
-print(f"Mentorship search: {results[0]['match_type']} (score: {results[0]['score']})")
-
-# Test career progression search
-results = context_manager.fast_search("career progression") 
-print(f"Career progression: {len(results)} results found")
-
-# Test data engineer search
-results = context_manager.fast_search("data engineer")
-print(f"Data engineer: {results[0]['file']} ({results[0]['match_type']})")
-```
-
-**Expected output:**
-```
-Mentorship search: metadata_exact (score: 1.5)
-Career progression: 2 results found
-Data engineer: data_management_role_description.md (metadata_exact)
 ```
 
 ### Adding New Context Files
@@ -489,44 +355,20 @@ Data engineer: data_management_role_description.md (metadata_exact)
 To add new context files:
 
 1. **Create markdown file** in `src/mcp_sharepoint/context/`
-2. **Add metadata (optional but recommended)** - Include YAML frontmatter for enhanced search
-3. **Update context_manager.py** - Add file to appropriate category in `CONTEXT_CATEGORIES`
-4. **Update tool mapping** (optional) - Add category to tools in `TOOL_CONTEXT_MAP`
-5. **Test** - Run `test_context_integration.py` to verify
+2. **Update context_manager.py** - Add file to appropriate category in `CONTEXT_CATEGORIES`
+3. **Update tool mapping** (optional) - Add category to tools in `TOOL_CONTEXT_MAP`
+4. **Test** - Run `test_context_integration.py` to verify
 
-**Example with Metadata (Recommended):**
-```yaml
----
-FILE: your_new_role_file.md
-PURPOSE: Define expectations for your new role
-DEPARTMENT: Your Department
-LEVELS: L1 through L5
-KEY_SECTIONS: Responsibilities, Skills, Requirements
-COMMON_SEARCHES: your role, new position, role expectations, department roles
-RELATED_FILES: other_related_file.md
-LAST_UPDATED: 2024-11-30
----
-
-# Your New Role Description
-
-Your content here...
-```
-
-**Update context_manager.py:**
+**Example:**
 ```python
 # In context_manager.py
 CONTEXT_CATEGORIES = {
-    'dept_your_department': [
+    'roles': [
+        'software_engineer_role_description.md',
         'your_new_role_file.md',  # ← Add here
     ]
 }
 ```
-
-**Benefits of Adding Metadata:**
-- ✅ **Faster Search**: Direct metadata matches (score 1.5) vs content search (score 1.0)
-- ✅ **Better Relevance**: Curated COMMON_SEARCHES terms for precise matching
-- ✅ **Self-Documenting**: Clear purpose and relationships defined
-- ✅ **Future-Proof**: Easy to update search terms without code changes
 
 ### Recent Context Updates (November 2024)
 
@@ -2963,8 +2805,8 @@ Upload location: SharePoint Data folder
 ### Detailed Documentation
 
 For complete details about the training data generator, see:
-- **`TRAINING_DATA_GUIDE.md`** - Comprehensive guide including:
-  - Quick start instructions
+- **`QUICK_START_TRAINING_DATA.md`** - Quick reference guide
+- **`TRAINING_DATA_GENERATOR_README.md`** - Comprehensive documentation including:
   - Column definitions for each file
   - Data generation logic
   - Customization options

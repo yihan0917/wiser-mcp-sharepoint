@@ -1,14 +1,3 @@
----
-FILE: engineering_career_path.md
-PURPOSE: Define career progression framework for Engineering department with Maker and Management tracks
-DEPARTMENT: Engineering
-LEVELS: L1 through L10 with Maker and Management tracks
-KEY_SECTIONS: Career Tracks, Leadership Team, Level Definitions, Promotion Criteria
-COMMON_SEARCHES: career path, promotion, L5, L6, L7, maker track, management track, leadership team, staff engineer, principal engineer, director, career progression, engineering levels
-RELATED_FILES: software_engineer_role_description.md, engineering_leadership_role_description.md
-LAST_UPDATED: 2024-11-30
----
-
 # Engineering Career Path Framework
 
 **DEPARTMENT: ENGINEERING**
