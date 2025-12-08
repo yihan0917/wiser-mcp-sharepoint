@@ -1,0 +1,25 @@
+# SharePoint MCP Server Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core MCP and SharePoint integration
+mcp>=1.2.1
+msal>=1.24.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Document processing and text extraction
+pymupdf>=1.23.0
+python-docx>=1.1.0
+python-pptx>=0.6.21
+openpyxl>=3.1.0
+
+# Data analysis and processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Visualization and charting (used in powerpoint_helper.py)
+matplotlib>=3.7.0
+pillow>=10.0.0
+
+# Note: fitz is part of pymupdf package (already included above)
+# Note: tempfile, functools, datetime, json, io, re are built-in Python modules
