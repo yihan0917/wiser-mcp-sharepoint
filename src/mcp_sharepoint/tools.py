@@ -1075,37 +1075,6 @@ async def calculate_hr_metrics_tool(folder_name: str, file_name: str):
     except Exception as e:
         return {"success": False, "message": f"Error calculating HR metrics: {str(e)}"}
 
-@mcp.tool(name="Generate_Chart_Data", description="Generate data formatted for charts and visualizations")
-async def generate_chart_data_tool(folder_name: str, file_name: str, chart_type: str, breakdown_by: Optional[str] = None):
-    """Generate data formatted for charts and visualizations
-    
-    Chart types: hiring_trends, source_effectiveness, time_to_hire_distribution, 
-                department_hiring, conversion_funnel
-    """
-    try:
-        # Get the Excel content
-        content_result = get_document_content(folder_name, file_name)
-        if not content_result.get("success", True):
-            return {"success": False, "message": "Failed to retrieve Excel file"}
-        
-        # Parse content into DataFrame
-        df = hr_analytics.parse_excel_content(content_result.get("content", ""))
-        if df.empty:
-            return {"success": False, "message": "No data found in Excel file"}
-        
-        # Generate chart data
-        chart_data = hr_analytics.generate_chart_data(df, chart_type, breakdown_by)
-        
-        return {
-            "success": True,
-            "file_name": file_name,
-            "chart_type": chart_type,
-            "chart_data": chart_data
-        }
-        
-    except Exception as e:
-        return {"success": False, "message": f"Error generating chart data: {str(e)}"}
-
 @mcp.tool(name="Analyze_HR_File_Complete", description="Complete analysis of HR Excel file including data quality, metrics, and chart data. Returns structured data + raw data summaries to enable AI to generate custom insights beyond pre-defined analysis.")
 async def analyze_hr_file_complete_tool(folder_name: str, file_name: str):
     """Perform complete analysis of HR Excel file including data quality, metrics, and suggested visualizations.
@@ -1219,53 +1188,6 @@ async def analyze_hr_file_complete_tool(folder_name: str, file_name: str):
         
     except Exception as e:
         return {"success": False, "message": f"Error performing complete analysis: {str(e)}"}
-
-# Visualization and Export Tools
-@mcp.tool(name="Create_Excel_With_Charts", description="Create Excel file with embedded charts and download link")
-async def create_excel_with_charts_tool(folder_name: str, file_name: str, chart_types: Optional[List[str]] = None):
-    """Create Excel file with embedded charts from HR data"""
-    try:
-        # Get the Excel content
-        content_result = get_document_content(folder_name, file_name)
-        if not content_result.get("success", True):
-            return {"success": False, "message": "Failed to retrieve Excel file"}
-        
-        # Parse content into DataFrame
-        df = hr_analytics.parse_excel_content(content_result.get("content", ""))
-        if df.empty:
-            return {"success": False, "message": "No data found in Excel file"}
-        
-        # Generate chart configurations
-        if not chart_types:
-            chart_types = ['source_effectiveness', 'hiring_trends', 'time_to_hire_distribution']
-        
-        chart_configs = []
-        for chart_type in chart_types:
-            try:
-                chart_data = hr_analytics.generate_chart_data(df, chart_type)
-                if chart_data.get('data') and len(chart_data['data'].get('values', [])) > 0:
-                    chart_configs.append(chart_data)
-            except:
-                continue
-        
-        # Create Excel with charts
-        excel_bytes = visualization_helper.create_excel_with_charts(df, chart_configs, file_name)
-        
-        # Upload to SharePoint
-        excel_filename = f"charts_{file_name.replace('.xlsx', '')}_analysis.xlsx"
-        upload_result = _upload_file_helper(folder_name, excel_filename, base64.b64encode(excel_bytes).decode(), is_base64=True)
-        
-        return {
-            "success": True,
-            "message": f"Excel file with charts created: {excel_filename}",
-            "file_name": excel_filename,
-            "charts_included": len(chart_configs),
-            "chart_types": [config.get('chart_type') for config in chart_configs],
-            "download_info": "File uploaded to SharePoint and ready for download"
-        }
-        
-    except Exception as e:
-        return {"success": False, "message": f"Error creating Excel with charts: {str(e)}"}
 
 @mcp.tool(name="Create_PowerPoint_Report", 
 description="Create professional PowerPoint presentation with charts, insights, and data definitions. This tool creates basic PowerPoint reports with standard charts. For comprehensive, detailed presentations with custom visualizations, Claude should generate the presentation manually and then upload it to SharePoint.")
