@@ -795,6 +795,138 @@ See `PowerPoint_JSON_Template.md` for complete formatting guidelines and example
 4. **Focus on Actionability**: Generate specific, measurable recommendations
 5. **Validate Data Quality**: Use data quality tools before analysis to ensure accuracy
 
+---
+
+## Create_PowerPoint_Report Enhancement (v0.6.0)
+
+### Overview
+
+The `Create_PowerPoint_Report` tool has been enhanced to combine automatic data visualization with AI-generated strategic insights in a single presentation.
+
+### Key Features
+
+**1. Dual Capability**
+- **Automatic Charts**: Generates standard analytical charts from data (time analysis, role distribution, location trends)
+- **AI Insights**: Optionally adds custom insight slides (recommendations, comparisons, strategic analysis)
+
+**2. Flexible Input Format**
+The `ai_insights` parameter accepts both JSON string and JSON array formats:
+```python
+# Both formats work (MCP framework auto-parses arrays)
+ai_insights = [{"title": "...", "data": {...}}]  # ✅ Recommended
+ai_insights = '[{"title": "...", "data": {...}}]'  # ✅ Also works
+```
+
+**3. Type System**
+- Parameter type: `Optional[Union[str, list]]`
+- Handles both string and list inputs at runtime
+- Comprehensive validation with helpful error messages
+
+### Usage Example
+
+```python
+# Basic usage (automatic charts only)
+mcp2_Create_PowerPoint_Report(
+    file_name="Q3_Data.xlsx",
+    folder_name="Recruiting Data",
+    output_folder="AI Generated Reports"
+)
+# Output: 6 slides (1 title + 5 chart slides)
+
+# Enhanced usage (automatic charts + AI insights)
+ai_insights = [
+    {
+        "title": "Executive Summary",
+        "data": {
+            "type": "metric",
+            "value": "76 days",
+            "label": "Average Time-to-Hire",
+            "context": ["Point 1", "Point 2", "Point 3"]
+        }
+    },
+    {
+        "title": "Strategic Recommendation",
+        "data": {
+            "type": "recommendation",
+            "recommendation": "Implement interview scheduling blocks",
+            "rationale": ["Reason 1", "Reason 2", "Expected impact"]
+        }
+    }
+]
+
+mcp2_Create_PowerPoint_Report(
+    file_name="Q3_Data.xlsx",
+    folder_name="Recruiting Data",
+    output_folder="AI Generated Reports",
+    presentation_title="Q3 Analysis with Insights",
+    ai_insights=ai_insights
+)
+# Output: 8 slides (1 title + 5 chart slides + 2 AI insight slides)
+```
+
+### AI Insights Slide Types
+
+The tool supports 7 flexible slide types for AI insights:
+
+1. **`metric`** - Large key metric with supporting context
+2. **`comparison`** - Side-by-side comparisons
+3. **`recommendation`** - Actionable recommendations with rationale
+4. **`analysis`** - Detailed analysis with bullet points
+5. **`chart_with_analysis`** - Custom charts with insights
+6. **`table`** - Data tables with insights
+7. **`two_column`** - Flexible two-column layouts
+
+### JSON Template Reference
+
+For complete formatting guidelines and examples, see:
+- **`docs/AI_INSIGHTS_TEMPLATE.md`** - Comprehensive template with all 7 slide types
+  - Complete examples for each type
+  - Required and optional fields
+  - Common mistakes to avoid
+  - Quick reference table at the end
+
+### Validation
+
+The tool includes comprehensive validation:
+- Checks for required fields (`title`, `data`, `type`)
+- Validates slide types against allowed list
+- Provides helpful error messages referencing documentation
+- Continues processing valid slides even if some fail
+
+### Benefits
+
+**For AI Agents:**
+- Clear template to follow
+- Both input formats accepted
+- Helpful error messages
+- Quick reference table for field lookup
+
+**For Users:**
+- Single tool for data visualization + insights
+- Backward compatible (works without AI insights)
+- Professional presentations combining data and strategy
+- Context-aware recommendations
+
+### Technical Details
+
+**Type Annotation:**
+```python
+ai_insights: Optional[Union[str, list]] = None
+```
+
+**Runtime Handling:**
+```python
+if isinstance(ai_insights, str):
+    insights_data = json.loads(ai_insights)
+elif isinstance(ai_insights, list):
+    insights_data = ai_insights  # Already parsed by MCP
+```
+
+**Error Messages:**
+All validation errors reference `docs/AI_INSIGHTS_TEMPLATE.md` for proper format guidance.
+
+---
+
 ## Setup Notes
 
 - **Graph API is recommended** for new implementations due to better reliability

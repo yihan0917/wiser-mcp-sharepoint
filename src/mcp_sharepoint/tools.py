@@ -3,7 +3,7 @@ SharePoint MCP tools using Microsoft Graph API
 """
 import base64, os, io
 from functools import wraps
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -1268,9 +1268,51 @@ async def create_excel_with_charts_tool(folder_name: str, file_name: str, chart_
         return {"success": False, "message": f"Error creating Excel with charts: {str(e)}"}
 
 @mcp.tool(name="Create_PowerPoint_Report", 
-description="Create professional PowerPoint presentation with charts, insights, and data definitions. This tool creates basic PowerPoint reports with standard charts. For comprehensive, detailed presentations with custom visualizations, Claude should generate the presentation manually and then upload it to SharePoint.")
-async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[str] = None, output_folder: Optional[str] = None, presentation_title: Optional[str] = None):
-    """Create professional PowerPoint presentation from HR data analysis"""
+description="""Create professional PowerPoint presentation with comprehensive visualizations AND AI-generated insights.
+
+This enhanced tool combines:
+1. Automatic chart generation with data-driven visualizations (time analysis, role distribution, location trends, etc.)
+2. AI-generated custom insight slides (recommendations, comparisons, strategic analysis)
+
+The tool automatically generates standard analytical charts from the data, then optionally adds AI-crafted insight slides for deeper strategic recommendations. This provides both comprehensive data visualization AND intelligent business insights in a single presentation.
+
+Optional AI insights can include:
+- 'metric': Highlight key metrics with large values
+- 'comparison': Side-by-side comparisons
+- 'recommendation': Actionable recommendations with rationale
+- 'analysis': Detailed analysis with bullet points
+- 'chart_with_analysis': Charts with insights
+- 'table': Data tables with insights
+- 'two_column': Two-column layouts
+
+IMPORTANT - AI Insights Format:
+- The ai_insights parameter accepts BOTH JSON string and JSON array formats
+- MCP framework auto-parses JSON arrays, so both formats work correctly
+- Follow the template structure in docs/AI_INSIGHTS_TEMPLATE.md for proper formatting
+- Each insight must have: {"title": "...", "data": {"type": "...", ...}}
+
+Use this tool when you want both automated data visualizations AND custom AI insights in one presentation.""")
+async def create_powerpoint_report_tool(
+    file_name: str, 
+    folder_name: Optional[str] = None, 
+    output_folder: Optional[str] = None, 
+    presentation_title: Optional[str] = None,
+    ai_insights: Optional[Union[str, list]] = None  # JSON string or list of custom AI insight slides
+):
+    """Create professional PowerPoint presentation from HR data analysis with optional AI insights
+    
+    Args:
+        file_name: Excel file to analyze
+        folder_name: Source folder (default: "Recruiting Data")
+        output_folder: Output folder (default: "AI Generated Reports")
+        presentation_title: Presentation title (default: "HR Recruiting Analytics Report")
+        ai_insights: Optional JSON string or list with custom AI insight slides to add after charts
+                    Accepts both formats (MCP framework auto-parses JSON arrays):
+                    - JSON string: "[{...}, {...}]"
+                    - JSON array: [{...}, {...}]
+                    See docs/AI_INSIGHTS_TEMPLATE.md for complete format specification
+                    Format: [{"title": "...", "data": {"type": "metric|comparison|...", ...}}]
+    """
     try:
         # Set default folders if not specified
         if folder_name is None:
@@ -1377,6 +1419,71 @@ async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[st
                 logger.error(f"Error creating slide for {chart_config['type']}: {e}")
                 continue
         
+        # Add AI-generated insight slides if provided
+        ai_slides_created = 0
+        if ai_insights:
+            try:
+                import json
+                
+                # Handle both string and list inputs (MCP framework may auto-parse JSON)
+                if isinstance(ai_insights, str):
+                    insights_data = json.loads(ai_insights)
+                elif isinstance(ai_insights, list):
+                    insights_data = ai_insights
+                else:
+                    logger.warning(f"AI insights must be a JSON string or list, got {type(ai_insights)}, skipping AI slides")
+                    insights_data = None
+                
+                if insights_data and isinstance(insights_data, list):
+                    # Validate structure before processing
+                    valid_types = ['metric', 'comparison', 'recommendation', 'analysis', 'chart_with_analysis', 'table', 'two_column']
+                    
+                    # Create slides from AI insights using flexible template system
+                    for idx, insight_def in enumerate(insights_data):
+                        try:
+                            # Validate basic structure
+                            if not isinstance(insight_def, dict):
+                                logger.error(f"AI insight at index {idx} must be a dictionary, got {type(insight_def)}. See docs/AI_INSIGHTS_TEMPLATE.md")
+                                continue
+                            
+                            if 'title' not in insight_def:
+                                logger.error(f"AI insight at index {idx} missing required 'title' field. See docs/AI_INSIGHTS_TEMPLATE.md")
+                                continue
+                            
+                            if 'data' not in insight_def:
+                                logger.error(f"AI insight '{insight_def.get('title')}' missing required 'data' field. See docs/AI_INSIGHTS_TEMPLATE.md")
+                                continue
+                            
+                            insight_title = insight_def.get('title', 'Insight')
+                            insight_data = insight_def.get('data', {})
+                            
+                            # Validate slide type
+                            slide_type = insight_data.get('type')
+                            if not slide_type:
+                                logger.error(f"AI insight '{insight_title}' missing 'type' in data. Valid types: {', '.join(valid_types)}. See docs/AI_INSIGHTS_TEMPLATE.md")
+                                continue
+                            
+                            if slide_type not in valid_types:
+                                logger.error(f"AI insight '{insight_title}' has invalid type '{slide_type}'. Valid types: {', '.join(valid_types)}. See docs/AI_INSIGHTS_TEMPLATE.md")
+                                continue
+                            
+                            # Use PowerPointHelper's create_insight_slide method
+                            # which supports: metric, comparison, recommendation, analysis,
+                            # chart_with_analysis, table, two_column
+                            ppt.create_insight_slide(insight_title, insight_data)
+                            ai_slides_created += 1
+                            
+                        except Exception as e:
+                            logger.error(f"Error creating AI insight slide '{insight_def.get('title', 'unknown')}': {e}. See docs/AI_INSIGHTS_TEMPLATE.md for proper format")
+                            continue
+                    
+                    logger.info(f"Added {ai_slides_created} AI-generated insight slides")
+                    
+            except json.JSONDecodeError as e:
+                logger.error(f"Invalid JSON format for ai_insights: {e}. See docs/AI_INSIGHTS_TEMPLATE.md for proper format")
+            except Exception as e:
+                logger.error(f"Error processing AI insights: {e}. See docs/AI_INSIGHTS_TEMPLATE.md for proper format")
+        
         # Save PowerPoint to bytes
         pptx_bytes = ppt.save_to_bytes()
         
@@ -1384,13 +1491,22 @@ async def create_powerpoint_report_tool(file_name: str, folder_name: Optional[st
         pptx_filename = f"report_{file_name.replace('.xlsx', '')}.pptx"
         upload_result = _upload_file_helper(output_folder, pptx_filename, base64.b64encode(pptx_bytes).decode(), is_base64=True)
         
-        return {
+        total_slides = slides_created + 1 + ai_slides_created  # +1 for title slide
+        
+        result = {
             "success": True,
             "message": f"PowerPoint presentation created: {pptx_filename}",
             "file_name": pptx_filename,
-            "slides_created": slides_created + 1,  # +1 for title slide
+            "slides_created": total_slides,
+            "chart_slides": slides_created,
             "download_info": "File uploaded to SharePoint and ready for download"
         }
+        
+        if ai_slides_created > 0:
+            result["ai_insight_slides"] = ai_slides_created
+            result["message"] += f" (includes {ai_slides_created} AI insight slides)"
+        
+        return result
         
     except Exception as e:
         return {"success": False, "message": f"Error creating PowerPoint presentation: {str(e)}"}
