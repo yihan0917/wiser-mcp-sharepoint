@@ -13,6 +13,7 @@ from .context_manager import context_manager
 from .analytics_helper import hr_analytics
 from .visualization_helper import visualization_helper
 from .powerpoint_helper import PowerPointHelper
+from .insights_validator import insights_validator
 from datetime import datetime
 import json
 from io import BytesIO
@@ -1075,36 +1076,36 @@ async def calculate_hr_metrics_tool(folder_name: str, file_name: str):
     except Exception as e:
         return {"success": False, "message": f"Error calculating HR metrics: {str(e)}"}
 
-# @mcp.tool(name="Generate_Chart_Data", description="Generate data formatted for charts and visualizations")
-# async def generate_chart_data_tool(folder_name: str, file_name: str, chart_type: str, breakdown_by: Optional[str] = None):
-#     """Generate data formatted for charts and visualizations
+@mcp.tool(name="Generate_Chart_Data", description="Generate data formatted for charts and visualizations")
+async def generate_chart_data_tool(folder_name: str, file_name: str, chart_type: str, breakdown_by: Optional[str] = None):
+    """Generate data formatted for charts and visualizations
     
-#     Chart types: hiring_trends, source_effectiveness, time_to_hire_distribution, 
-#                 department_hiring, conversion_funnel
-#     """
-#     try:
-#         # Get the Excel content
-#         content_result = get_document_content(folder_name, file_name)
-#         if not content_result.get("success", True):
-#             return {"success": False, "message": "Failed to retrieve Excel file"}
+    Chart types: hiring_trends, source_effectiveness, time_to_hire_distribution, 
+                department_hiring, conversion_funnel
+    """
+    try:
+        # Get the Excel content
+        content_result = get_document_content(folder_name, file_name)
+        if not content_result.get("success", True):
+            return {"success": False, "message": "Failed to retrieve Excel file"}
         
-#         # Parse content into DataFrame
-#         df = hr_analytics.parse_excel_content(content_result.get("content", ""))
-#         if df.empty:
-#             return {"success": False, "message": "No data found in Excel file"}
+        # Parse content into DataFrame
+        df = hr_analytics.parse_excel_content(content_result.get("content", ""))
+        if df.empty:
+            return {"success": False, "message": "No data found in Excel file"}
         
-#         # Generate chart data
-#         chart_data = hr_analytics.generate_chart_data(df, chart_type, breakdown_by)
+        # Generate chart data
+        chart_data = hr_analytics.generate_chart_data(df, chart_type, breakdown_by)
         
-#         return {
-#             "success": True,
-#             "file_name": file_name,
-#             "chart_type": chart_type,
-#             "chart_data": chart_data
-#         }
+        return {
+            "success": True,
+            "file_name": file_name,
+            "chart_type": chart_type,
+            "chart_data": chart_data
+        }
         
-#     except Exception as e:
-#         return {"success": False, "message": f"Error generating chart data: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "message": f"Error generating chart data: {str(e)}"}
 
 @mcp.tool(name="Analyze_HR_File_Complete", description="Complete analysis of HR Excel file including data quality, metrics, and chart data. Returns structured data + raw data summaries to enable AI to generate custom insights beyond pre-defined analysis.")
 async def analyze_hr_file_complete_tool(folder_name: str, file_name: str):
@@ -1220,52 +1221,52 @@ async def analyze_hr_file_complete_tool(folder_name: str, file_name: str):
     except Exception as e:
         return {"success": False, "message": f"Error performing complete analysis: {str(e)}"}
 
-# # Visualization and Export Tools
-# @mcp.tool(name="Create_Excel_With_Charts", description="Create Excel file with embedded charts and download link")
-# async def create_excel_with_charts_tool(folder_name: str, file_name: str, chart_types: Optional[List[str]] = None):
-#     """Create Excel file with embedded charts from HR data"""
-#     try:
-#         # Get the Excel content
-#         content_result = get_document_content(folder_name, file_name)
-#         if not content_result.get("success", True):
-#             return {"success": False, "message": "Failed to retrieve Excel file"}
+# Visualization and Export Tools
+@mcp.tool(name="Create_Excel_With_Charts", description="Create Excel file with embedded charts and download link")
+async def create_excel_with_charts_tool(folder_name: str, file_name: str, chart_types: Optional[List[str]] = None):
+    """Create Excel file with embedded charts from HR data"""
+    try:
+        # Get the Excel content
+        content_result = get_document_content(folder_name, file_name)
+        if not content_result.get("success", True):
+            return {"success": False, "message": "Failed to retrieve Excel file"}
         
-#         # Parse content into DataFrame
-#         df = hr_analytics.parse_excel_content(content_result.get("content", ""))
-#         if df.empty:
-#             return {"success": False, "message": "No data found in Excel file"}
+        # Parse content into DataFrame
+        df = hr_analytics.parse_excel_content(content_result.get("content", ""))
+        if df.empty:
+            return {"success": False, "message": "No data found in Excel file"}
         
-#         # Generate chart configurations
-#         if not chart_types:
-#             chart_types = ['source_effectiveness', 'hiring_trends', 'time_to_hire_distribution']
+        # Generate chart configurations
+        if not chart_types:
+            chart_types = ['source_effectiveness', 'hiring_trends', 'time_to_hire_distribution']
         
-#         chart_configs = []
-#         for chart_type in chart_types:
-#             try:
-#                 chart_data = hr_analytics.generate_chart_data(df, chart_type)
-#                 if chart_data.get('data') and len(chart_data['data'].get('values', [])) > 0:
-#                     chart_configs.append(chart_data)
-#             except:
-#                 continue
+        chart_configs = []
+        for chart_type in chart_types:
+            try:
+                chart_data = hr_analytics.generate_chart_data(df, chart_type)
+                if chart_data.get('data') and len(chart_data['data'].get('values', [])) > 0:
+                    chart_configs.append(chart_data)
+            except:
+                continue
         
-#         # Create Excel with charts
-#         excel_bytes = visualization_helper.create_excel_with_charts(df, chart_configs, file_name)
+        # Create Excel with charts
+        excel_bytes = visualization_helper.create_excel_with_charts(df, chart_configs, file_name)
         
-#         # Upload to SharePoint
-#         excel_filename = f"charts_{file_name.replace('.xlsx', '')}_analysis.xlsx"
-#         upload_result = _upload_file_helper(folder_name, excel_filename, base64.b64encode(excel_bytes).decode(), is_base64=True)
+        # Upload to SharePoint
+        excel_filename = f"charts_{file_name.replace('.xlsx', '')}_analysis.xlsx"
+        upload_result = _upload_file_helper(folder_name, excel_filename, base64.b64encode(excel_bytes).decode(), is_base64=True)
         
-#         return {
-#             "success": True,
-#             "message": f"Excel file with charts created: {excel_filename}",
-#             "file_name": excel_filename,
-#             "charts_included": len(chart_configs),
-#             "chart_types": [config.get('chart_type') for config in chart_configs],
-#             "download_info": "File uploaded to SharePoint and ready for download"
-#         }
+        return {
+            "success": True,
+            "message": f"Excel file with charts created: {excel_filename}",
+            "file_name": excel_filename,
+            "charts_included": len(chart_configs),
+            "chart_types": [config.get('chart_type') for config in chart_configs],
+            "download_info": "File uploaded to SharePoint and ready for download"
+        }
         
-#     except Exception as e:
-#         return {"success": False, "message": f"Error creating Excel with charts: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "message": f"Error creating Excel with charts: {str(e)}"}
 
 @mcp.tool(name="Create_PowerPoint_Report", 
 description="""Create professional PowerPoint presentation with comprehensive visualizations AND AI-generated insights.
@@ -1435,37 +1436,37 @@ async def create_powerpoint_report_tool(
                     insights_data = None
                 
                 if insights_data and isinstance(insights_data, list):
-                    # Validate structure before processing
-                    valid_types = ['metric', 'comparison', 'recommendation', 'analysis', 'chart_with_analysis', 'table', 'two_column']
+                    # VALIDATE AI INSIGHTS STRUCTURE AGAINST TEMPLATE
+                    is_valid, validation_errors, valid_insights = insights_validator.validate_insights(insights_data)
                     
-                    # Create slides from AI insights using flexible template system
-                    for idx, insight_def in enumerate(insights_data):
+                    if not is_valid:
+                        # Log detailed validation report
+                        validation_report = insights_validator.format_validation_report(
+                            validation_errors, 
+                            len(valid_insights), 
+                            len(insights_data)
+                        )
+                        logger.error(validation_report)
+                        
+                        # If no valid insights, return error
+                        if len(valid_insights) == 0:
+                            return {
+                                "success": False,
+                                "message": "AI insights validation failed - no valid insights to create slides",
+                                "validation_errors": validation_errors,
+                                "hint": "Please review docs/AI_INSIGHTS_TEMPLATE.md for correct structure"
+                            }
+                        
+                        # Log warning but continue with valid insights
+                        logger.warning(f"Proceeding with {len(valid_insights)} valid insights out of {len(insights_data)} total")
+                    else:
+                        logger.info(f"✓ All {len(insights_data)} AI insights validated successfully")
+                    
+                    # Create slides from VALIDATED insights only
+                    for insight_def in valid_insights:
                         try:
-                            # Validate basic structure
-                            if not isinstance(insight_def, dict):
-                                logger.error(f"AI insight at index {idx} must be a dictionary, got {type(insight_def)}. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
-                            
-                            if 'title' not in insight_def:
-                                logger.error(f"AI insight at index {idx} missing required 'title' field. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
-                            
-                            if 'data' not in insight_def:
-                                logger.error(f"AI insight '{insight_def.get('title')}' missing required 'data' field. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
-                            
                             insight_title = insight_def.get('title', 'Insight')
                             insight_data = insight_def.get('data', {})
-                            
-                            # Validate slide type
-                            slide_type = insight_data.get('type')
-                            if not slide_type:
-                                logger.error(f"AI insight '{insight_title}' missing 'type' in data. Valid types: {', '.join(valid_types)}. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
-                            
-                            if slide_type not in valid_types:
-                                logger.error(f"AI insight '{insight_title}' has invalid type '{slide_type}'. Valid types: {', '.join(valid_types)}. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
                             
                             # Use PowerPointHelper's create_insight_slide method
                             # which supports: metric, comparison, recommendation, analysis,
@@ -1474,7 +1475,7 @@ async def create_powerpoint_report_tool(
                             ai_slides_created += 1
                             
                         except Exception as e:
-                            logger.error(f"Error creating AI insight slide '{insight_def.get('title', 'unknown')}': {e}. See docs/AI_INSIGHTS_TEMPLATE.md for proper format")
+                            logger.error(f"Error creating AI insight slide '{insight_def.get('title', 'unknown')}': {e}")
                             continue
                     
                     logger.info(f"Added {ai_slides_created} AI-generated insight slides")
@@ -1512,283 +1513,283 @@ async def create_powerpoint_report_tool(
         return {"success": False, "message": f"Error creating PowerPoint presentation: {str(e)}"}
 
 
-# @mcp.tool(name="Generate_AI_PowerPoint",
-# description="""Create custom PowerPoint presentation from AI-generated insights. 
-# This tool allows the AI to create comprehensive, detailed presentations with custom visualizations and insights.
+@mcp.tool(name="Generate_AI_PowerPoint",
+description="""Create custom PowerPoint presentation from AI-generated insights. 
+This tool allows the AI to create comprehensive, detailed presentations with custom visualizations and insights.
 
-# The AI provides structured insights in JSON format with flexible slide types:
-# - 'metric': Highlight key metrics with large values
-# - 'comparison': Side-by-side comparisons
-# - 'recommendation': Actionable recommendations with rationale
-# - 'analysis': Detailed analysis with bullet points
-# - 'chart_with_analysis': Charts with insights
-# - 'table': Data tables with insights
-# - 'two_column': Two-column layouts
+The AI provides structured insights in JSON format with flexible slide types:
+- 'metric': Highlight key metrics with large values
+- 'comparison': Side-by-side comparisons
+- 'recommendation': Actionable recommendations with rationale
+- 'analysis': Detailed analysis with bullet points
+- 'chart_with_analysis': Charts with insights
+- 'table': Data tables with insights
+- 'two_column': Two-column layouts
 
-# This is the preferred tool for creating comprehensive presentations with AI-driven insights.""")
-# async def generate_ai_powerpoint_tool(
-#     presentation_title: str,
-#     slides: str,  # JSON string of slide definitions
-#     output_folder: Optional[str] = None,
-#     output_filename: Optional[str] = None
-# ):
-#     """
-#     Generate PowerPoint presentation from AI-structured insights
+This is the preferred tool for creating comprehensive presentations with AI-driven insights.""")
+async def generate_ai_powerpoint_tool(
+    presentation_title: str,
+    slides: str,  # JSON string of slide definitions
+    output_folder: Optional[str] = None,
+    output_filename: Optional[str] = None
+):
+    """
+    Generate PowerPoint presentation from AI-structured insights
     
-#     Args:
-#         presentation_title: Title for the presentation
-#         slides: JSON string containing array of slide definitions
-#         output_folder: SharePoint folder to upload to (default: "AI Generated Reports")
-#         output_filename: Output filename (default: auto-generated)
+    Args:
+        presentation_title: Title for the presentation
+        slides: JSON string containing array of slide definitions
+        output_folder: SharePoint folder to upload to (default: "AI Generated Reports")
+        output_filename: Output filename (default: auto-generated)
     
-#     Slide format:
-#     {
-#         "title": "Slide Title",
-#         "type": "metric|comparison|recommendation|analysis|chart_with_analysis|table|two_column",
-#         "data": {
-#             // Type-specific data structure
-#         }
-#     }
-#     """
-#     try:
-#         import json
+    Slide format:
+    {
+        "title": "Slide Title",
+        "type": "metric|comparison|recommendation|analysis|chart_with_analysis|table|two_column",
+        "data": {
+            // Type-specific data structure
+        }
+    }
+    """
+    try:
+        import json
         
-#         # Set defaults
-#         if output_folder is None:
-#             output_folder = "AI Generated Reports"
-#         if output_filename is None:
-#             output_filename = f"AI_Presentation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
+        # Set defaults
+        if output_folder is None:
+            output_folder = "AI Generated Reports"
+        if output_filename is None:
+            output_filename = f"AI_Presentation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
         
-#         # Ensure .pptx extension
-#         if not output_filename.endswith('.pptx'):
-#             output_filename += '.pptx'
+        # Ensure .pptx extension
+        if not output_filename.endswith('.pptx'):
+            output_filename += '.pptx'
         
-#         # Parse slides JSON
-#         try:
-#             slides_data = json.loads(slides)
-#         except json.JSONDecodeError as e:
-#             return {"success": False, "message": f"Invalid JSON format for slides: {str(e)}"}
+        # Parse slides JSON
+        try:
+            slides_data = json.loads(slides)
+        except json.JSONDecodeError as e:
+            return {"success": False, "message": f"Invalid JSON format for slides: {str(e)}"}
         
-#         if not isinstance(slides_data, list):
-#             return {"success": False, "message": "Slides must be a JSON array"}
+        if not isinstance(slides_data, list):
+            return {"success": False, "message": "Slides must be a JSON array"}
         
-#         # Create PowerPoint
-#         ppt = PowerPointHelper()
+        # Create PowerPoint
+        ppt = PowerPointHelper()
         
-#         # Title slide
-#         ppt.create_title_slide(presentation_title)
+        # Title slide
+        ppt.create_title_slide(presentation_title)
         
-#         # Create slides from AI insights
-#         slides_created = 1  # Count title slide
-#         for slide_def in slides_data:
-#             try:
-#                 slide_title = slide_def.get('title', 'Untitled Slide')
-#                 slide_data = slide_def.get('data', {})
+        # Create slides from AI insights
+        slides_created = 1  # Count title slide
+        for slide_def in slides_data:
+            try:
+                slide_title = slide_def.get('title', 'Untitled Slide')
+                slide_data = slide_def.get('data', {})
                 
-#                 # Create insight slide using flexible template system
-#                 ppt.create_insight_slide(slide_title, slide_data)
-#                 slides_created += 1
+                # Create insight slide using flexible template system
+                ppt.create_insight_slide(slide_title, slide_data)
+                slides_created += 1
                 
-#             except Exception as e:
-#                 logger.error(f"Error creating slide '{slide_def.get('title', 'unknown')}': {e}")
-#                 continue
+            except Exception as e:
+                logger.error(f"Error creating slide '{slide_def.get('title', 'unknown')}': {e}")
+                continue
         
-#         # Save to bytes
-#         pptx_bytes = ppt.save_to_bytes()
+        # Save to bytes
+        pptx_bytes = ppt.save_to_bytes()
         
-#         # Upload to SharePoint
-#         upload_result = _upload_file_helper(
-#             output_folder, 
-#             output_filename, 
-#             base64.b64encode(pptx_bytes).decode(), 
-#             is_base64=True
-#         )
+        # Upload to SharePoint
+        upload_result = _upload_file_helper(
+            output_folder, 
+            output_filename, 
+            base64.b64encode(pptx_bytes).decode(), 
+            is_base64=True
+        )
         
-#         if not upload_result.get("success", False):
-#             return {
-#                 "success": False,
-#                 "message": f"Failed to upload PowerPoint: {upload_result.get('message', 'Unknown error')}"
-#             }
+        if not upload_result.get("success", False):
+            return {
+                "success": False,
+                "message": f"Failed to upload PowerPoint: {upload_result.get('message', 'Unknown error')}"
+            }
         
-#         return {
-#             "success": True,
-#             "message": f"AI-generated PowerPoint created successfully: {output_filename}",
-#             "file_name": output_filename,
-#             "folder": output_folder,
-#             "slides_created": slides_created,
-#             "download_info": "File uploaded to SharePoint and ready for download"
-#         }
+        return {
+            "success": True,
+            "message": f"AI-generated PowerPoint created successfully: {output_filename}",
+            "file_name": output_filename,
+            "folder": output_folder,
+            "slides_created": slides_created,
+            "download_info": "File uploaded to SharePoint and ready for download"
+        }
         
-#     except Exception as e:
-#         logger.error(f"Error in Generate_AI_PowerPoint: {e}")
-#         return {"success": False, "message": f"Error generating AI PowerPoint: {str(e)}"}
+    except Exception as e:
+        logger.error(f"Error in Generate_AI_PowerPoint: {e}")
+        return {"success": False, "message": f"Error generating AI PowerPoint: {str(e)}"}
 
 
-# @mcp.tool(name="Convert_Content_To_PowerPoint",
-# description="""Convert structured content (JSON, Markdown, or HTML) into a PowerPoint presentation.
-# This tool takes structured content in various formats and generates a professional PowerPoint file.
+@mcp.tool(name="Convert_Content_To_PowerPoint",
+description="""Convert structured content (JSON, Markdown, or HTML) into a PowerPoint presentation.
+This tool takes structured content in various formats and generates a professional PowerPoint file.
 
-# Supported input formats:
-# - JSON: Structured slide definitions with content and formatting
-# - Markdown: Converts headings, lists, and text into slides
-# - HTML: Parses HTML structure into presentation slides
+Supported input formats:
+- JSON: Structured slide definitions with content and formatting
+- Markdown: Converts headings, lists, and text into slides
+- HTML: Parses HTML structure into presentation slides
 
-# The tool handles:
-# - Multiple slide layouts (title, content, two-column, chart)
-# - Text formatting and bullet points
-# - Basic charts and tables
-# - Images (as base64 or URLs)
-# - Custom styling and themes
-# """)
-# async def convert_content_to_powerpoint_tool(
-#     content: str,
-#     content_format: str,  # "json", "markdown", or "html"
-#     presentation_title: str,
-#     output_folder: Optional[str] = None,
-#     output_filename: Optional[str] = None,
-#     theme: Optional[str] = None  # "default", "professional", "modern", "minimal"
-# ):
-#     """
-#     Convert structured content to PowerPoint presentation
+The tool handles:
+- Multiple slide layouts (title, content, two-column, chart)
+- Text formatting and bullet points
+- Basic charts and tables
+- Images (as base64 or URLs)
+- Custom styling and themes
+""")
+async def convert_content_to_powerpoint_tool(
+    content: str,
+    content_format: str,  # "json", "markdown", or "html"
+    presentation_title: str,
+    output_folder: Optional[str] = None,
+    output_filename: Optional[str] = None,
+    theme: Optional[str] = None  # "default", "professional", "modern", "minimal"
+):
+    """
+    Convert structured content to PowerPoint presentation
     
-#     Args:
-#         content: The content to convert (JSON string, Markdown text, or HTML)
-#         content_format: Format of input content ("json", "markdown", "html")
-#         presentation_title: Title for the presentation
-#         output_folder: SharePoint folder (default: "AI Generated Reports")
-#         output_filename: Output filename (default: auto-generated from title)
-#         theme: Visual theme to apply (default: "professional")
+    Args:
+        content: The content to convert (JSON string, Markdown text, or HTML)
+        content_format: Format of input content ("json", "markdown", "html")
+        presentation_title: Title for the presentation
+        output_folder: SharePoint folder (default: "AI Generated Reports")
+        output_filename: Output filename (default: auto-generated from title)
+        theme: Visual theme to apply (default: "professional")
     
-#     JSON Format:
-#     [
-#         {
-#             "type": "title|content|two_column|chart|table|image",
-#             "title": "Slide Title",
-#             "content": "Main content or bullet points",
-#             "data": {...}  // Type-specific data
-#         }
-#     ]
+    JSON Format:
+    [
+        {
+            "type": "title|content|two_column|chart|table|image",
+            "title": "Slide Title",
+            "content": "Main content or bullet points",
+            "data": {...}  // Type-specific data
+        }
+    ]
     
-#     Returns:
-#         Dict with success status, file info, and download details
-#     """
-#     try:
+    Returns:
+        Dict with success status, file info, and download details
+    """
+    try:
         
-#         # Set defaults
-#         if output_folder is None:
-#             output_folder = "AI Generated Reports"
-#         if output_filename is None:
-#             # Sanitize title for filename
-#             safe_title = "".join(c for c in presentation_title if c.isalnum() or c in (' ', '-', '_')).strip()
-#             safe_title = safe_title.replace(' ', '_')
-#             output_filename = f"{safe_title}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
+        # Set defaults
+        if output_folder is None:
+            output_folder = "AI Generated Reports"
+        if output_filename is None:
+            # Sanitize title for filename
+            safe_title = "".join(c for c in presentation_title if c.isalnum() or c in (' ', '-', '_')).strip()
+            safe_title = safe_title.replace(' ', '_')
+            output_filename = f"{safe_title}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
         
-#         # Ensure .pptx extension
-#         if not output_filename.endswith('.pptx'):
-#             output_filename += '.pptx'
+        # Ensure .pptx extension
+        if not output_filename.endswith('.pptx'):
+            output_filename += '.pptx'
         
-#         # Parse content based on format
-#         slides_data = []
+        # Parse content based on format
+        slides_data = []
         
-#         if content_format.lower() == "json":
-#             try:
-#                 slides_data = json.loads(content)
-#                 if not isinstance(slides_data, list):
-#                     return {"success": False, "message": "JSON content must be an array of slides"}
-#             except json.JSONDecodeError as e:
-#                 return {"success": False, "message": f"Invalid JSON format: {str(e)}"}
+        if content_format.lower() == "json":
+            try:
+                slides_data = json.loads(content)
+                if not isinstance(slides_data, list):
+                    return {"success": False, "message": "JSON content must be an array of slides"}
+            except json.JSONDecodeError as e:
+                return {"success": False, "message": f"Invalid JSON format: {str(e)}"}
         
-#         elif content_format.lower() == "markdown":
-#             slides_data = _parse_markdown_to_slides(content)
+        elif content_format.lower() == "markdown":
+            slides_data = _parse_markdown_to_slides(content)
         
-#         elif content_format.lower() == "html":
-#             slides_data = _parse_html_to_slides(content)
+        elif content_format.lower() == "html":
+            slides_data = _parse_html_to_slides(content)
         
-#         else:
-#             return {"success": False, "message": f"Unsupported content format: {content_format}"}
+        else:
+            return {"success": False, "message": f"Unsupported content format: {content_format}"}
         
-#         if not slides_data:
-#             return {"success": False, "message": "No slides generated from content"}
+        if not slides_data:
+            return {"success": False, "message": "No slides generated from content"}
         
-#         # Create PowerPoint presentation
-#         prs = Presentation()
-#         prs.slide_width = Inches(10)
-#         prs.slide_height = Inches(7.5)
+        # Create PowerPoint presentation
+        prs = Presentation()
+        prs.slide_width = Inches(10)
+        prs.slide_height = Inches(7.5)
         
-#         # Apply theme
-#         theme_colors = _get_theme_colors(theme or "professional")
+        # Apply theme
+        theme_colors = _get_theme_colors(theme or "professional")
         
-#         # Create title slide
-#         _create_title_slide(prs, presentation_title, theme_colors)
-#         slides_created = 1
+        # Create title slide
+        _create_title_slide(prs, presentation_title, theme_colors)
+        slides_created = 1
         
-#         # Process each slide
-#         for slide_def in slides_data:
-#             try:
-#                 slide_type = slide_def.get('type', 'content')
+        # Process each slide
+        for slide_def in slides_data:
+            try:
+                slide_type = slide_def.get('type', 'content')
                 
-#                 if slide_type == "title":
-#                     _create_title_slide(prs, slide_def.get('title', ''), theme_colors, 
-#                                        slide_def.get('subtitle', ''))
+                if slide_type == "title":
+                    _create_title_slide(prs, slide_def.get('title', ''), theme_colors, 
+                                       slide_def.get('subtitle', ''))
                 
-#                 elif slide_type == "content":
-#                     _create_content_slide(prs, slide_def, theme_colors)
+                elif slide_type == "content":
+                    _create_content_slide(prs, slide_def, theme_colors)
                 
-#                 elif slide_type == "two_column":
-#                     _create_two_column_slide(prs, slide_def, theme_colors)
+                elif slide_type == "two_column":
+                    _create_two_column_slide(prs, slide_def, theme_colors)
                 
-#                 elif slide_type == "chart":
-#                     _create_chart_slide(prs, slide_def, theme_colors)
+                elif slide_type == "chart":
+                    _create_chart_slide(prs, slide_def, theme_colors)
                 
-#                 elif slide_type == "table":
-#                     _create_table_slide(prs, slide_def, theme_colors)
+                elif slide_type == "table":
+                    _create_table_slide(prs, slide_def, theme_colors)
                 
-#                 elif slide_type == "image":
-#                     _create_image_slide(prs, slide_def, theme_colors)
+                elif slide_type == "image":
+                    _create_image_slide(prs, slide_def, theme_colors)
                 
-#                 else:
-#                     # Default to content slide
-#                     _create_content_slide(prs, slide_def, theme_colors)
+                else:
+                    # Default to content slide
+                    _create_content_slide(prs, slide_def, theme_colors)
                 
-#                 slides_created += 1
+                slides_created += 1
                 
-#             except Exception as e:
-#                 logger.error(f"Error creating slide: {e}")
-#                 continue
+            except Exception as e:
+                logger.error(f"Error creating slide: {e}")
+                continue
         
-#         # Save to bytes
-#         pptx_buffer = BytesIO()
-#         prs.save(pptx_buffer)
-#         pptx_buffer.seek(0)
-#         pptx_bytes = pptx_buffer.getvalue()
+        # Save to bytes
+        pptx_buffer = BytesIO()
+        prs.save(pptx_buffer)
+        pptx_buffer.seek(0)
+        pptx_bytes = pptx_buffer.getvalue()
         
-#         # Upload to SharePoint
-#         upload_result = _upload_file_helper(
-#             output_folder,
-#             output_filename,
-#             base64.b64encode(pptx_bytes).decode(),
-#             is_base64=True
-#         )
+        # Upload to SharePoint
+        upload_result = _upload_file_helper(
+            output_folder,
+            output_filename,
+            base64.b64encode(pptx_bytes).decode(),
+            is_base64=True
+        )
         
-#         if not upload_result.get("success", False):
-#             return {
-#                 "success": False,
-#                 "message": f"Failed to upload PowerPoint: {upload_result.get('message', 'Unknown error')}"
-#             }
+        if not upload_result.get("success", False):
+            return {
+                "success": False,
+                "message": f"Failed to upload PowerPoint: {upload_result.get('message', 'Unknown error')}"
+            }
         
-#         return {
-#             "success": True,
-#             "message": f"PowerPoint created successfully: {output_filename}",
-#             "file_name": output_filename,
-#             "folder": output_folder,
-#             "slides_created": slides_created,
-#             "file_size": len(pptx_bytes),
-#             "download_url": upload_result.get('file', {}).get('url', '')
-#         }
+        return {
+            "success": True,
+            "message": f"PowerPoint created successfully: {output_filename}",
+            "file_name": output_filename,
+            "folder": output_folder,
+            "slides_created": slides_created,
+            "file_size": len(pptx_bytes),
+            "download_url": upload_result.get('file', {}).get('url', '')
+        }
         
-#     except Exception as e:
-#         logger.error(f"Error in Convert_Content_To_PowerPoint: {e}")
-#         return {"success": False, "message": f"Error converting to PowerPoint: {str(e)}"}
+    except Exception as e:
+        logger.error(f"Error in Convert_Content_To_PowerPoint: {e}")
+        return {"success": False, "message": f"Error converting to PowerPoint: {str(e)}"}
 
 
 # Helper functions
