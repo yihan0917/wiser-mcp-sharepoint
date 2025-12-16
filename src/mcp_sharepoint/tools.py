@@ -13,6 +13,7 @@ from .context_manager import context_manager
 from .analytics_helper import hr_analytics
 from .visualization_helper import visualization_helper
 from .powerpoint_helper import PowerPointHelper
+from .insights_validator import insights_validator
 from datetime import datetime
 import json
 from io import BytesIO
@@ -1435,37 +1436,37 @@ async def create_powerpoint_report_tool(
                     insights_data = None
                 
                 if insights_data and isinstance(insights_data, list):
-                    # Validate structure before processing
-                    valid_types = ['metric', 'comparison', 'recommendation', 'analysis', 'chart_with_analysis', 'table', 'two_column']
+                    # VALIDATE AI INSIGHTS STRUCTURE AGAINST TEMPLATE
+                    is_valid, validation_errors, valid_insights = insights_validator.validate_insights(insights_data)
                     
-                    # Create slides from AI insights using flexible template system
-                    for idx, insight_def in enumerate(insights_data):
+                    if not is_valid:
+                        # Log detailed validation report
+                        validation_report = insights_validator.format_validation_report(
+                            validation_errors, 
+                            len(valid_insights), 
+                            len(insights_data)
+                        )
+                        logger.error(validation_report)
+                        
+                        # If no valid insights, return error
+                        if len(valid_insights) == 0:
+                            return {
+                                "success": False,
+                                "message": "AI insights validation failed - no valid insights to create slides",
+                                "validation_errors": validation_errors,
+                                "hint": "Please review docs/AI_INSIGHTS_TEMPLATE.md for correct structure"
+                            }
+                        
+                        # Log warning but continue with valid insights
+                        logger.warning(f"Proceeding with {len(valid_insights)} valid insights out of {len(insights_data)} total")
+                    else:
+                        logger.info(f"✓ All {len(insights_data)} AI insights validated successfully")
+                    
+                    # Create slides from VALIDATED insights only
+                    for insight_def in valid_insights:
                         try:
-                            # Validate basic structure
-                            if not isinstance(insight_def, dict):
-                                logger.error(f"AI insight at index {idx} must be a dictionary, got {type(insight_def)}. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
-                            
-                            if 'title' not in insight_def:
-                                logger.error(f"AI insight at index {idx} missing required 'title' field. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
-                            
-                            if 'data' not in insight_def:
-                                logger.error(f"AI insight '{insight_def.get('title')}' missing required 'data' field. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
-                            
                             insight_title = insight_def.get('title', 'Insight')
                             insight_data = insight_def.get('data', {})
-                            
-                            # Validate slide type
-                            slide_type = insight_data.get('type')
-                            if not slide_type:
-                                logger.error(f"AI insight '{insight_title}' missing 'type' in data. Valid types: {', '.join(valid_types)}. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
-                            
-                            if slide_type not in valid_types:
-                                logger.error(f"AI insight '{insight_title}' has invalid type '{slide_type}'. Valid types: {', '.join(valid_types)}. See docs/AI_INSIGHTS_TEMPLATE.md")
-                                continue
                             
                             # Use PowerPointHelper's create_insight_slide method
                             # which supports: metric, comparison, recommendation, analysis,
@@ -1474,7 +1475,7 @@ async def create_powerpoint_report_tool(
                             ai_slides_created += 1
                             
                         except Exception as e:
-                            logger.error(f"Error creating AI insight slide '{insight_def.get('title', 'unknown')}': {e}. See docs/AI_INSIGHTS_TEMPLATE.md for proper format")
+                            logger.error(f"Error creating AI insight slide '{insight_def.get('title', 'unknown')}': {e}")
                             continue
                     
                     logger.info(f"Added {ai_slides_created} AI-generated insight slides")
