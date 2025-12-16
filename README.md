@@ -131,7 +131,7 @@ If successful, you should see log messages indicating the server has started.
 
 #### For Claude Desktop
 
-1. **Open Settings** → **Developer** → **Edit Config**. This will open the MCP config file.
+1. **Open Settings** → **Developer** → **Edit Config**. This will point you to the MCP config file 'claude_desktop_config.json'. Open it with a text editor.
 
 2. **Edit the config file** and add this MCP server configuration:
 
@@ -157,7 +157,7 @@ If successful, you should see log messages indicating the server has started.
 
 **Replace** `/full/path/to/wiser-mcp-sharepoint` with the actual path where you cloned the repository
 
-3. **Restart Claude Desktop**
+3. **Save and Restart Claude Desktop**
 
 #### For Windsurf
 
