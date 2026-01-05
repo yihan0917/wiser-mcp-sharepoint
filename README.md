@@ -198,9 +198,9 @@ If the MCP server is connected correctly, the AI will use the `List_SharePoint_F
 
 ## 🛠️ Available Tools
 
-The server provides **20+ tools** organized into these categories:
+The server provides **20 tools** organized into these categories:
 
-### 📁 SharePoint Document Management
+### 📁 SharePoint Document Management (7 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -212,23 +212,21 @@ The server provides **20+ tools** organized into these categories:
 | `Delete_Document` | Delete a document from SharePoint |
 | `Download_Document` | Download a document to your local filesystem |
 
-### 📊 HR Analytics & Data Quality
+### 📊 HR Analytics & Data Quality (3 tools)
 
 | Tool | Description |
 |------|-------------|
 | `Validate_Excel_Data_Quality` | Check data quality in HR Excel files, identify missing data and anomalies |
-| `Calculate_HR_Metrics` | Calculate recruiting metrics like time-to-hire, fill rates, and hiring trends |
-| `Analyze_HR_File_Complete` | Comprehensive analysis of HR data with insights and recommendations |
-| `Generate_Chart_Data` | Generate data formatted for charts and visualizations |
+| `Calculate_HR_Metrics` | Calculate comprehensive recruiting metrics with pre-calculated metrics as reference plus raw data for AI-driven insights |
+| `Analyze_HR_File_Complete` | Complete analysis of HR Excel file including data quality, metrics, and chart data with raw data summaries for custom insights |
 
-### 📈 Report Generation
+### 📈 Report Generation (1 tool)
 
 | Tool | Description |
 |------|-------------|
-| `Create_PowerPoint_Report` | Generate professional PowerPoint presentations with automated charts and AI-generated insights |
-| `Create_Excel_With_Charts` | Create Excel files with embedded charts from HR data |
+| `Create_PowerPoint_Report` | Generate professional PowerPoint presentations with automated charts and optional AI-generated insight slides |
 
-### 🔍 Context & Knowledge Management
+### 🔍 Context & Knowledge Management (9 tools)
 
 | Tool | Description |
 |------|-------------|
