@@ -288,3 +288,106 @@ def download_document(folder_name: str, file_name: str, local_path: str) -> Dict
     except Exception as e:
         logger.error(f"Failed to download document {file_path}: {e}")
         return {"success": False, "message": f"Failed to download document: {str(e)}"}
+
+
+# ============================================================================
+# MCP RESOURCES - Expose context files to AI agents
+# ============================================================================
+
+from .common import mcp
+from .context_manager import context_manager
+
+@mcp.resource("context://file-naming-convention")
+def get_file_naming_convention() -> str:
+    """
+    File naming convention for Excel files in SharePoint.
+    
+    This resource provides the standardized naming convention that enables
+    AI agents to automatically identify and select appropriate files for
+    analysis based on user requests without requiring explicit file names.
+    
+    Convention: {content}_{source}_{time_period}_{year}.xlsx
+    
+    Read this resource BEFORE attempting to analyze data when the user
+    provides a generic request like "analyze Q3 training data" or 
+    "show me June hiring metrics".
+    """
+    return context_manager.get_context_by_category('file_naming')
+
+@mcp.resource("context://column-definitions")
+def get_column_definitions() -> str:
+    """
+    Excel column definitions for HR and recruiting data.
+    
+    This resource provides detailed definitions for all standard columns
+    used in HR Excel files, including job information, personnel data,
+    application tracking, timing metrics, sourcing, and costs.
+    
+    Read this resource when you need to understand what data columns mean
+    or when interpreting Excel file contents.
+    """
+    return context_manager.get_context_by_category('columns')
+
+@mcp.resource("context://metrics-definitions")
+def get_metrics_definitions() -> str:
+    """
+    HR metrics and KPI definitions.
+    
+    This resource provides definitions for common HR metrics like
+    time-to-hire, cost-per-hire, retention rates, and other KPIs.
+    
+    Read this resource when calculating or interpreting HR metrics.
+    """
+    return context_manager.get_context_by_category('metrics')
+
+@mcp.resource("context://all-context")
+def get_all_context() -> str:
+    """
+    Complete context including all categories.
+    
+    This resource provides all available context including:
+    - File naming convention
+    - Column definitions
+    - Metrics definitions
+    - Business context (company overview, engineering overview)
+    - Recruiting guidelines (hiring guide, career paths)
+    - Role descriptions (engineering, data, operations)
+    
+    Use this when you need comprehensive context for complex tasks.
+    """
+    all_context_parts = []
+    for category in ['file_naming', 'columns', 'metrics', 'business', 'recruiting', 'roles', 'operations']:
+        category_content = context_manager.get_context_by_category(category)
+        if category_content:
+            all_context_parts.append(f"=== CATEGORY: {category.upper()} ===\n{category_content}\n")
+    return "\n".join(all_context_parts)
+
+@mcp.resource("context://summary")
+def get_context_summary() -> str:
+    """
+    Summary of available context resources.
+    
+    This resource provides an overview of all available context categories,
+    files, and their purposes. Use this to discover what context is available.
+    """
+    summary = context_manager.get_context_summary()
+    
+    output = ["# Available Context Resources\n"]
+    output.append(f"Total files: {summary['total_files']}")
+    output.append(f"Total characters: {summary['total_characters']:,}")
+    output.append(f"Column definitions: {summary['column_definitions_count']}\n")
+    
+    output.append("## Categories and Files:\n")
+    for category, files in summary['files_by_category'].items():
+        output.append(f"### {category}")
+        for file in files:
+            output.append(f"  - {file}")
+        output.append("")
+    
+    output.append("\n## How to Use:")
+    output.append("- Read 'context://file-naming-convention' when user provides generic file requests")
+    output.append("- Read 'context://column-definitions' when interpreting Excel data")
+    output.append("- Read 'context://metrics-definitions' when calculating HR metrics")
+    output.append("- Read 'context://all-context' for comprehensive context")
+    
+    return "\n".join(output)
