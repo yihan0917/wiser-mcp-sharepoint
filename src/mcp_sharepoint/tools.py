@@ -830,23 +830,26 @@ async def find_relevant_context_files_tool(description: str, max_results: int = 
             # Role-related files
             'software_engineer_role_description.md': [
                 'software engineer', 'developer', 'programming', 'coding', 'technical role',
-                'engineer requirements', 'software development', 'backend', 'frontend', 'full stack'
+                'engineer requirements', 'software development', 'backend', 'frontend', 'full stack',
+                'engineering department'
             ],
             'data_management_role_description.md': [
                 'data engineer', 'data management', 'database', 'data pipeline', 'etl',
-                'data architecture', 'data platform', 'data infrastructure'
+                'data architect', 'data platform', 'data infrastructure', 'data engineering manager'
             ],
             'engineering_leadership_role_description.md': [
                 'engineering manager', 'tech lead', 'engineering leadership', 'team lead',
-                'engineering director', 'vp engineering', 'cto', 'management'
+                'engineering director', 'vp engineering', 'cto', 'management', 'engineering department'
             ],
             'ml_ds_da_role_description.md': [
                 'machine learning', 'data scientist', 'data analyst', 'ml engineer',
-                'analytics', 'ai', 'artificial intelligence', 'data science', 'statistics'
+                'analytics', 'ai', 'artificial intelligence', 'data science', 'statistics',
+                'machine learning software engineer', 'machine learning manager', 'analytics manager',
+                'engineering department'
             ],
             'in_store_operations_role_description.md': [
                 'operations', 'retail', 'store operations', 'field operations',
-                'user support', 'retail intelligence', 'data validation'
+                'user support', 'retail intelligence', 'data validation', 'in store', 'in-store operations department'
             ],
             
             # Business and culture files
@@ -856,18 +859,18 @@ async def find_relevant_context_files_tool(description: str, max_results: int = 
             ],
             'engineering_overview.md': [
                 'engineering culture', 'tech stack', 'engineering practices', 'development process',
-                'engineering strategy', 'technology', 'platform', 'architecture'
+                'engineering strategy', 'technology', 'platform', 'architecture', 'engineering department'
             ],
             
             # Hiring and career files
             'hiring_guide.md': [
                 'hiring', 'recruitment', 'interview', 'hiring process', 'recruiting',
-                'candidate', 'interview process', 'hiring standards', 'recruitment process'
+                'candidate', 'interview process', 'hiring standards', 'recruitment process', 'hiring guide'
             ],
             'engineering_career_path.md': [
                 'career path', 'promotion', 'levels', 'career progression', 'advancement',
                 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'career framework',
-                'job levels', 'seniority', 'career ladder'
+                'job levels', 'seniority', 'career ladder', 'engineering department'
             ],
             
             # Data and metrics files
@@ -877,24 +880,24 @@ async def find_relevant_context_files_tool(description: str, max_results: int = 
             ],
             'metrics_definitions.md': [
                 'metrics', 'kpi', 'measurements', 'analytics', 'performance indicators',
-                'hiring metrics', 'hr metrics', 'time to hire', 'cost per hire'
+                'hiring metrics', 'hr metrics', 'time to hire', 'cost per hire', 'conversion rate'
             ]
         }
         
         # Add specific position description files
         position_files = {
-            'Position-Description-MLE1-DS1.md': ['ml engineer 1', 'data scientist 1', 'entry level ml', 'junior data scientist'],
-            'Position-Description-DA1.md': ['data analyst 1', 'junior analyst', 'entry level analyst'],
-            'Position-Description-MLE2-DS2.md': ['ml engineer 2', 'data scientist 2', 'mid level ml'],
-            'Position-Description-DA2.md': ['data analyst 2', 'mid level analyst'],
-            'Position-Description-SMLE-SDS.md': ['senior ml engineer', 'senior data scientist'],
-            'Position-Description-SDA.md': ['senior data analyst', 'senior analyst'],
-            'Position-Description-LSMLE-LSDS.md': ['lead senior ml engineer', 'lead senior data scientist'],
-            'Position-Description-LSDA.md': ['lead senior data analyst', 'lead senior analyst'],
-            'Position-Description-PMLE-PDS.md': ['principal ml engineer', 'principal data scientist'],
-            'Position-Description-PDA.md': ['principal data analyst', 'principal analyst'],
-            'Position-Description-SEMLDS Manager.md': ['ml manager', 'data science manager', 'engineering manager ml'],
-            'Position-Description-Analytics Manager.md': ['analytics manager', 'data analytics manager']
+            'Position-Description-MLE1-DS1.md': ['ml engineer 1', 'data scientist 1', 'entry level ml', 'junior data scientist', 'engineering department'],
+            'Position-Description-DA1.md': ['data analyst 1', 'junior analyst', 'entry level analyst', 'engineering department'],
+            'Position-Description-MLE2-DS2.md': ['ml engineer 2', 'data scientist 2', 'mid level ml', 'engineering department'],
+            'Position-Description-DA2.md': ['data analyst 2', 'mid level analyst', 'engineering department'],
+            'Position-Description-SMLE-SDS.md': ['senior ml engineer', 'senior data scientist', 'engineering department'],
+            'Position-Description-SDA.md': ['senior data analyst', 'senior analyst', 'engineering department'],
+            'Position-Description-LSMLE-LSDS.md': ['lead senior ml engineer', 'lead senior data scientist', 'engineering department'],
+            'Position-Description-LSDA.md': ['lead senior data analyst', 'lead senior analyst', 'engineering department'],
+            'Position-Description-PMLE-PDS.md': ['principal ml engineer', 'principal data scientist', 'engineering department'],
+            'Position-Description-PDA.md': ['principal data analyst', 'principal analyst', 'engineering department'],
+            'Position-Description-SEMLDS Manager.md': ['ml manager', 'data science manager', 'engineering manager ml', 'engineering department'],
+            'Position-Description-Analytics Manager.md': ['analytics manager', 'data analytics manager', 'engineering department']
         }
         
         # Combine all keyword mappings
