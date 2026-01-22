@@ -16,6 +16,7 @@ class ContextManager:
         'metrics': ['metrics_definitions.md'],
         'business': ['company_overview.md', 'engineering_overview.md'],
         'recruiting': ['hiring_guide.md', 'engineering_career_path.md'],
+        'file_naming': ['file_naming_convention.md'],
         'roles': [
             # Software Engineering roles
             'software_engineer_role_description.md',
@@ -47,18 +48,18 @@ class ContextManager:
     
     # Map tools to the context categories they need
     TOOL_CONTEXT_MAP = {
-        'Analyze_HR_File_Complete': ['columns', 'business', 'metrics', 'roles', 'operations'],
-        'Calculate_HR_Metrics': ['columns', 'metrics', 'recruiting', 'roles', 'operations'],
-        'Validate_Excel_Data_Quality': ['columns', 'recruiting', 'roles', 'operations'],
-        'Create_PowerPoint_Report': ['columns', 'business', 'metrics', 'recruiting', 'roles', 'operations'],
-        'Create_Excel_With_Charts': ['columns', 'metrics'],
-        'Generate_Chart_Data': ['columns', 'metrics'],
-        'Get_Document_Content': ['columns'],
-        'List_SharePoint_Documents': [],
+        'Analyze_HR_File_Complete': ['file_naming', 'columns', 'business', 'metrics', 'roles', 'operations'],
+        'Calculate_HR_Metrics': ['file_naming', 'columns', 'metrics', 'recruiting', 'roles', 'operations'],
+        'Validate_Excel_Data_Quality': ['file_naming', 'columns', 'recruiting', 'roles', 'operations'],
+        'Create_PowerPoint_Report': ['file_naming', 'columns', 'business', 'metrics', 'recruiting', 'roles', 'operations'],
+        'Create_Excel_With_Charts': ['file_naming', 'columns', 'metrics'],
+        'Generate_Chart_Data': ['file_naming', 'columns', 'metrics'],
+        'Get_Document_Content': ['file_naming', 'columns'],
+        'List_SharePoint_Documents': ['file_naming'],
         'List_SharePoint_Folders': [],
-        'Upload_Document': [],
-        'Download_Document': [],
-        'Delete_Document': [],
+        'Upload_Document': ['file_naming'],
+        'Download_Document': ['file_naming'],
+        'Delete_Document': ['file_naming'],
         'Create_Folder': []
     }
     
