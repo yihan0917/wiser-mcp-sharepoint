@@ -74,7 +74,7 @@ print("✅ All dependencies installed successfully!")
 - ✅ **Removed Definition Slides** - Context used for intelligent analysis, not just display
 - ✅ **5 New Chart Types** - time_by_step, role_distribution, location_distribution, time_distribution, department_distribution
 
-### v0.5.0 - AI-Driven Insights Architecture 🆕
+### v0.5.0 - AI-Driven Insights Architecture
 - ✅ **Hybrid Analysis Model** - Pre-calculated metrics as reference + raw data for AI creativity
 - ✅ **Enhanced Tool Outputs** - Tools now return structured data + raw summaries + business context
 - ✅ **AI-Empowered Analysis** - AI can discover patterns beyond pre-defined metrics
@@ -85,6 +85,18 @@ print("✅ All dependencies installed successfully!")
 - ✅ **Flexible Recommendations** - AI generates custom insights based on actual data patterns
 - ✅ **Business Context Integration** - 2000-3000 chars of context per tool call
 - ✅ **Column Definition Matching** - Automatic lookup of column meanings from context files
+
+### v0.6.0 - Enhanced Search & Context Organization 🆕
+- ✅ **Fuzzy Matching** - Find relevant files with 80%+ similarity, handles typos and variations
+- ✅ **Three-Tier Matching** - Exact (100%), Fuzzy (50%), Partial (30%) scoring system
+- ✅ **Expanded Context Windows** - Increased from 2 to 10 lines before/after search matches
+- ✅ **Enhanced No-Results Analysis** - Detailed search diagnostics with intelligent suggestions
+- ✅ **Context Consolidation** - Merged engineering_career_path.md into engineering_overview.md
+- ✅ **Removed Redundant Files** - Eliminated ml_ds_da_role_description.md (individual files retained)
+- ✅ **Standardized Category Naming** - Consistent snake_case convention across all categories
+- ✅ **Expanded Keywords** - 200+ keywords for intelligent file matching
+- ✅ **Simplified Tool Mapping** - Streamlined context injection for better performance
+- ✅ **Built-in Fuzzy Search** - Uses Python's difflib.SequenceMatcher (no external dependencies)
 
 #### Key Improvements in v0.4.0
 
@@ -244,6 +256,146 @@ See `AI_INSIGHTS_ARCHITECTURE.md` for complete details on:
 - Real-world usage scenarios
 - Best practices for tool development
 - Future enhancement suggestions
+
+#### Key Improvements in v0.6.0
+
+**1. Fuzzy Matching for Context Search**
+
+Added intelligent fuzzy matching to the `Find_Relevant_Context_Files` tool using Python's built-in `difflib.SequenceMatcher`:
+
+```python
+# Three-tier matching system:
+# 1. Exact match (100% score): Substring matching
+if keyword.lower() in description.lower():
+    score = word_count * 2  # Full score
+
+# 2. Fuzzy match (50% score): 80%+ similarity
+similarity = SequenceMatcher(None, keyword, description).ratio()
+if similarity >= 0.8:
+    score = (word_count * similarity) * 0.5  # Reduced score
+
+# 3. Partial match (30% score): 60%+ word overlap
+common_words = keyword_words.intersection(description_words)
+if len(common_words) >= len(keyword_words) * 0.6:
+    score = len(common_words) * 0.3  # Further reduced score
+```
+
+**Benefits:**
+- Handles typos and variations ("Enginere" → "Engineer")
+- Matches similar terms ("Data Scientist" ≈ "Data Science")
+- Finds files with partial keyword overlap
+- No external dependencies required
+- Configurable similarity threshold (default: 0.8)
+
+**2. Expanded Context Windows**
+
+Increased context display from 2 to 10 lines before/after matches:
+
+```python
+# Before: 2 lines context (5 total lines)
+start = max(0, i - 2)
+end = min(len(lines), i + 3)
+
+# After: 10 lines context (21 total lines)
+start = max(0, i - 10)
+end = min(len(lines), i + 11)
+```
+
+Applied to:
+- `Search_Specific_Context_File` tool
+- `context_manager.search_context()` method
+
+**3. Enhanced No-Results Analysis**
+
+When searches return no results, provide detailed diagnostics:
+
+```json
+{
+  "matches_found": 0,
+  "search_analysis": {
+    "searched_for": "Lead Staff Principal Senior",
+    "total_files_searched": 22,
+    "total_keywords_checked": 200+,
+    "similarity_threshold": 0.8,
+    "extracted_terms": ["lead", "staff", "principal", "senior"],
+    "potential_related_files": [
+      "engineering_overview.md",
+      "Position-Description-LSMLE-LSDS.md"
+    ],
+    "suggestions": [
+      "Try searching for individual terms. Found potential matches in: engineering_overview.md"
+    ]
+  }
+}
+```
+
+**4. Context File Consolidation**
+
+Simplified context structure by merging related files:
+
+- **Merged**: `engineering_career_path.md` → `engineering_overview.md`
+  - Career path content now part of engineering overview
+  - Added 200+ lines covering L1-L10 progression
+  - Includes maker track, management track, leadership teams
+
+- **Removed**: `ml_ds_da_role_description.md`
+  - Individual position description files retained
+  - Eliminated redundant index file
+
+**5. Standardized Category Naming**
+
+Updated all category names to consistent `snake_case`:
+
+```python
+# Before (inconsistent)
+CONTEXT_CATEGORIES = {
+    'columns': [...],
+    'company overview': [...],           # spaces
+    'engineering department overview': [...],  # verbose
+    'file naming': [...],                # spaces
+    'engineering department roles': [...],     # verbose
+    'in-store operations department roles': [...]  # very verbose
+}
+
+# After (consistent snake_case)
+CONTEXT_CATEGORIES = {
+    'columns': [...],
+    'company_overview': [...],
+    'engineering_overview': [...],
+    'file_naming': [...],
+    'engineering_roles': [...],
+    'operations_roles': [...]
+}
+```
+
+**6. Expanded Keyword Coverage**
+
+Added 200+ specific keywords for intelligent file matching:
+
+- **Role titles**: "Associate Software Engineer", "Senior Data Scientist", "Principal ML Engineer"
+- **Career levels**: "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10"
+- **Tracks**: "maker track", "management track", "leadership team"
+- **Hiring process**: "Annual Budgeting", "Recruiter", "Interview Guidelines", "SmartRecruiters"
+- **Operations roles**: "Retail Intelligence", "User Support", "Data Quality Specialist"
+
+**7. Simplified Tool Context Mapping**
+
+Streamlined context injection for better performance:
+
+```python
+# Before: Verbose category lists
+'Analyze_HR_File_Complete': ['file_naming', 'columns', 'company_overview', 
+                              'engineering_overview', 'metrics', 'engineering_roles', 
+                              'operations_roles']
+
+# After: Focused on essentials
+'Analyze_HR_File_Complete': ['file_naming', 'columns', 'recruiting', 'metrics']
+
+# Get_Document_Content gets comprehensive context for general support
+'Get_Document_Content': ['file_naming', 'columns', 'recruiting', 'metrics', 
+                         'engineering_roles', 'operations_roles', 
+                         'company_overview', 'engineering_overview']
+```
 
 ## Context Management System
 

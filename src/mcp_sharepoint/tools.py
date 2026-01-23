@@ -4,6 +4,7 @@ SharePoint MCP tools using Microsoft Graph API
 import base64, os, io
 from functools import wraps
 from typing import Optional, Dict, Any, List, Union
+from difflib import SequenceMatcher
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -704,7 +705,7 @@ async def search_all_context_tool(search_term: str, categories: list = None):
     
     Args:
         search_term: The term to search for
-        categories: Optional list of categories to search in (columns, metrics, business, recruiting)
+        categories: Optional list of categories to search in (columns, metrics, company_overview, engineering_overview, recruiting, engineering_roles, operations_roles)
     """
     try:
         results = context_manager.search_context(search_term, categories)
@@ -724,7 +725,7 @@ async def search_specific_context_file_tool(search_term: str, context_file_name:
     
     Args:
         search_term: The term to search for
-        context_file_name: Name of the specific context file to search (e.g., 'software_engineer_role_description', 'hiring_guide', 'engineering_career_path')
+        context_file_name: Name of the specific context file to search (e.g., 'software_engineer_role_description', 'hiring_guide', 'engineering_overview')
     """
     try:
         # Normalize the file name - add .md extension if not present
@@ -775,9 +776,9 @@ async def search_specific_context_file_tool(search_term: str, context_file_name:
             lines = file_content.split('\n')
             for i, line in enumerate(lines):
                 if search_term.lower() in line.lower():
-                    # Get context around each match (2 lines before and after)
-                    start = max(0, i - 2)
-                    end = min(len(lines), i + 3)
+                    # Get context around each match (10 lines before and after)
+                    start = max(0, i - 10)
+                    end = min(len(lines), i + 11)
                     excerpt = '\n'.join(lines[start:end])
                     
                     results.append({
@@ -816,61 +817,97 @@ async def list_available_context_files_tool():
     except Exception as e:
         return {"success": False, "message": f"Error listing context files: {str(e)}"}
 
-@mcp.tool(name="Find_Relevant_Context_Files", description="Find the most relevant context files based on natural language descriptions like 'software engineer requirements', 'hiring standards', or 'career progression'.")
-async def find_relevant_context_files_tool(description: str, max_results: int = 3):
+def _calculate_similarity(str1: str, str2: str) -> float:
+    """Calculate similarity ratio between two strings (0.0 to 1.0)"""
+    return SequenceMatcher(None, str1.lower(), str2.lower()).ratio()
+
+def _get_fuzzy_match_score(keyword: str, description: str, similarity_threshold: float = 0.8) -> tuple:
+    """
+    Calculate fuzzy match score for a keyword against description
+    
+    Returns:
+        tuple: (score, match_type) where match_type is 'exact', 'fuzzy', or None
+    """
+    keyword_lower = keyword.lower()
+    description_lower = description.lower()
+    
+    # Check for exact substring match first
+    if keyword_lower in description_lower:
+        # Exact match: full score based on keyword length
+        word_count = len(keyword.split())
+        score = word_count * 2 if keyword_lower == description_lower else word_count
+        return (score, 'exact')
+    
+    # Check for fuzzy match using similarity ratio
+    similarity = _calculate_similarity(keyword, description)
+    if similarity >= similarity_threshold:
+        # Fuzzy match: reduced score (50% of exact match score)
+        word_count = len(keyword.split())
+        score = (word_count * similarity) * 0.5
+        return (score, 'fuzzy')
+    
+    # Also check if any individual words in the keyword match
+    keyword_words = set(keyword_lower.split())
+    description_words = set(description_lower.split())
+    common_words = keyword_words.intersection(description_words)
+    
+    if common_words and len(common_words) >= len(keyword_words) * 0.6:  # 60% word overlap
+        # Partial word match: even more reduced score (30% of exact match)
+        score = len(common_words) * 0.3
+        return (score, 'partial')
+    
+    return (0, None)
+
+@mcp.tool(name="Find_Relevant_Context_Files", description="Find the most relevant context files based on natural language descriptions like 'software engineer requirements', 'hiring standards', or 'career progression'. Uses both exact and fuzzy matching (80% similarity threshold) to find relevant files.")
+async def find_relevant_context_files_tool(description: str, max_results: int = 3, similarity_threshold: float = 0.8):
     """Find context files that match a natural language description
     
     Args:
         description: Natural language description (e.g., 'software engineer requirements', 'hiring standards', 'company values')
         max_results: Maximum number of matching files to return (default: 3)
+        similarity_threshold: Minimum similarity ratio for fuzzy matching (0.0-1.0, default: 0.8)
     """
     try:
         # Define keyword mappings for intelligent file matching
         file_keywords = {
             # Role-related files
             'software_engineer_role_description.md': [
-                'software engineer', 'developer', 'programming', 'coding', 'technical role',
-                'engineer requirements', 'software development', 'backend', 'frontend', 'full stack',
-                'engineering department'
+                'Associate Software Engineer', 'Software Engineer I', 'Software Engineer II', 'Senior Software Engineer',
+                'Lead Software Engineer', 'Principal Software Engineer', 'Staff Software Engineer', 'Distinguished Software Engineer'
             ],
             'data_management_role_description.md': [
-                'data engineer', 'data management', 'database', 'data pipeline', 'etl',
-                'data architect', 'data platform', 'data infrastructure', 'data engineering manager'
+                'Associate Data Engineer', 'Data Engineer', 'Data Engineer II', 'Senior Data Engineer', 'Lead Data Engineer', 
+                'Data Architect', 'Data Engineering Manager', 'Principal Data Engineer', 'Data Architect II', 'Senior Engineering Manager',
+                'Staff Data Engineer', 'Staff Data Architect', 'Director'
             ],
             'engineering_leadership_role_description.md': [
-                'engineering manager', 'tech lead', 'engineering leadership', 'team lead',
-                'engineering director', 'vp engineering', 'cto', 'management', 'engineering department'
-            ],
-            'ml_ds_da_role_description.md': [
-                'machine learning', 'data scientist', 'data analyst', 'ml engineer',
-                'analytics', 'ai', 'artificial intelligence', 'data science', 'statistics',
-                'machine learning software engineer', 'machine learning manager', 'analytics manager',
-                'engineering department'
+                'Engineering Manager', 'Senior Engineering Manager', 'Director of Engineering', 'Senior Director of Engineering', 
+                'Vice President of Engineering', 'Senior Vice President', 'Chief Technology Officer', 'CTO'
             ],
             'in_store_operations_role_description.md': [
-                'operations', 'retail', 'store operations', 'field operations',
-                'user support', 'retail intelligence', 'data validation', 'in store', 'in-store operations department'
+                'Retail Intelligence', 'Data Validation Team','Sr. Data Quality Specialist', 'Data Quality Specialist', 'Team Lead', 'Sr. Team Lead', 
+                'User Support', 'User Support Associate', 'Retail Execution Management', 'Sr. Technical Implementation Specialist', 'Technical Implementation Specialist', 
+                'Operations Manager', 'In-Store Price Check', 'Data Collection Specialist', 'Sr. Technical Operations Analyst'
             ],
             
             # Business and culture files
             'company_overview.md': [
-                'company', 'mission', 'values', 'culture', 'vision', 'business',
-                'organization', 'company culture', 'corporate values'
+                'company', 'mission', 'values', 'culture', 'vision', 'Commerce Execution Suite',
+                'organization', 'company culture', 'corporate values', 'Product Vision', 'Key Products', 'Product Strategy'
             ],
             'engineering_overview.md': [
-                'engineering culture', 'tech stack', 'engineering practices', 'development process',
-                'engineering strategy', 'technology', 'platform', 'architecture', 'engineering department'
+                'engineering culture', 'engineering practices', 'Engineering vision',
+                'engineering strategy', 'architecture', 'engineering department', 'Engineering mission',
+                'Engineering Career Path', 'progression for technical roles', 
+                'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'maker track', 'management track', 'leadership team', 
+                'engineering senior leadership team', 'engineering leadership team','Career Path Levels'
             ],
             
             # Hiring and career files
             'hiring_guide.md': [
-                'hiring', 'recruitment', 'interview', 'hiring process', 'recruiting',
-                'candidate', 'interview process', 'hiring standards', 'recruitment process', 'hiring guide'
-            ],
-            'engineering_career_path.md': [
-                'career path', 'promotion', 'levels', 'career progression', 'advancement',
-                'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'career framework',
-                'job levels', 'seniority', 'career ladder', 'engineering department'
+                'hiring', 'recruitment', 'hiring process', 'interview process', 'hiring standards', 'hiring guide', 
+                'Annual Budgeting', 'In-Year Requests', 'Hiring Plan', 'Planning for New Roles',
+                'Recruiter', 'Recruiting Partners', 'Interview Meeting Guidelines', 'Applicant Tracking System', 'SmartRecruiters'
             ],
             
             # Data and metrics files
@@ -879,49 +916,59 @@ async def find_relevant_context_files_tool(description: str, max_results: int = 
                 'field definitions', 'data dictionary', 'column meanings'
             ],
             'metrics_definitions.md': [
-                'metrics', 'kpi', 'measurements', 'analytics', 'performance indicators',
+                'metrics', 'kpi', 'measurements', 'performance indicators',
                 'hiring metrics', 'hr metrics', 'time to hire', 'cost per hire', 'conversion rate'
             ]
         }
         
         # Add specific position description files
         position_files = {
-            'Position-Description-MLE1-DS1.md': ['ml engineer 1', 'data scientist 1', 'entry level ml', 'junior data scientist', 'engineering department'],
-            'Position-Description-DA1.md': ['data analyst 1', 'junior analyst', 'entry level analyst', 'engineering department'],
-            'Position-Description-MLE2-DS2.md': ['ml engineer 2', 'data scientist 2', 'mid level ml', 'engineering department'],
-            'Position-Description-DA2.md': ['data analyst 2', 'mid level analyst', 'engineering department'],
-            'Position-Description-SMLE-SDS.md': ['senior ml engineer', 'senior data scientist', 'engineering department'],
-            'Position-Description-SDA.md': ['senior data analyst', 'senior analyst', 'engineering department'],
-            'Position-Description-LSMLE-LSDS.md': ['lead senior ml engineer', 'lead senior data scientist', 'engineering department'],
-            'Position-Description-LSDA.md': ['lead senior data analyst', 'lead senior analyst', 'engineering department'],
-            'Position-Description-PMLE-PDS.md': ['principal ml engineer', 'principal data scientist', 'engineering department'],
-            'Position-Description-PDA.md': ['principal data analyst', 'principal analyst', 'engineering department'],
-            'Position-Description-SEMLDS Manager.md': ['ml manager', 'data science manager', 'engineering manager ml', 'engineering department'],
-            'Position-Description-Analytics Manager.md': ['analytics manager', 'data analytics manager', 'engineering department']
+            'Position-Description-MLE1-DS1.md': ['Machine Learning Software Engineer I', 'Data Scientist I'],
+            'Position-Description-DA1.md': ['Data Analyst I'],
+            'Position-Description-MLE2-DS2.md': ['Machine Learning Software Engineer II', 'Data Scientist II'],
+            'Position-Description-DA2.md': ['Data Analyst II'],
+            'Position-Description-SMLE-SDS.md': ['Senior Machine Learning Software Engineer', 'Senior Data Scientist'],
+            'Position-Description-SDA.md': ['Senior Data Analyst'],
+            'Position-Description-LSMLE-LSDS.md': ['Lead Senior Machine Learning Software Engineer', 'Lead Senior Data Scientist'],
+            'Position-Description-LSDA.md': ['Lead Senior Data Analyst'],
+            'Position-Description-PMLE-PDS.md': ['Principal Machine Learning Software Engineer', 'Principal Data Scientist'],
+            'Position-Description-PDA.md': ['Principal Data Analyst'],
+            'Position-Description-SEMLDS Manager.md': ['Software Engineering and Machine Learning/Data Science Manager'],
+            'Position-Description-Analytics Manager.md': ['Analytics Manager']
         }
         
         # Combine all keyword mappings
         all_keywords = {**file_keywords, **position_files}
         
-        # Score files based on keyword matches
+        # Score files based on keyword matches (exact and fuzzy)
         file_scores = {}
-        description_lower = description.lower()
         
         for filename, keywords in all_keywords.items():
-            score = 0
-            matched_keywords = []
+            total_score = 0
+            exact_matches = []
+            fuzzy_matches = []
+            partial_matches = []
             
             for keyword in keywords:
-                if keyword.lower() in description_lower:
-                    # Give higher scores for exact matches and longer keywords
-                    keyword_score = len(keyword.split()) * 2 if keyword.lower() == description_lower else len(keyword.split())
-                    score += keyword_score
-                    matched_keywords.append(keyword)
+                keyword_score, match_type = _get_fuzzy_match_score(keyword, description, similarity_threshold)
+                
+                if match_type == 'exact':
+                    total_score += keyword_score
+                    exact_matches.append(keyword)
+                elif match_type == 'fuzzy':
+                    total_score += keyword_score
+                    fuzzy_matches.append(keyword)
+                elif match_type == 'partial':
+                    total_score += keyword_score
+                    partial_matches.append(keyword)
             
-            if score > 0:
+            if total_score > 0:
                 file_scores[filename] = {
-                    'score': score,
-                    'matched_keywords': matched_keywords
+                    'score': total_score,
+                    'exact_matches': exact_matches,
+                    'fuzzy_matches': fuzzy_matches,
+                    'partial_matches': partial_matches,
+                    'total_matches': len(exact_matches) + len(fuzzy_matches) + len(partial_matches)
                 }
         
         # Sort by score and get top results
@@ -941,19 +988,60 @@ async def find_relevant_context_files_tool(description: str, max_results: int = 
             results.append({
                 'filename': filename,
                 'category': file_category,
-                'relevance_score': match_info['score'],
-                'matched_keywords': match_info['matched_keywords'],
+                'relevance_score': round(match_info['score'], 2),
+                'total_matches': match_info['total_matches'],
+                'exact_matches': match_info['exact_matches'],
+                'fuzzy_matches': match_info['fuzzy_matches'],
+                'partial_matches': match_info['partial_matches'],
                 'file_exists': filename in [f for files in context_manager.contexts.values() for f in files.keys()]
             })
         
         if not results:
-            # If no matches found, suggest using the general search
+            # Provide detailed analysis when no matches found
+            total_files = len(all_keywords)
+            total_keywords = sum(len(keywords) for keywords in all_keywords.values())
+            
+            # Extract key terms from description for analysis
+            description_words = [word.strip('.,!?;:') for word in description.lower().split() if len(word.strip('.,!?;:')) > 2]
+            
+            # Find potential related terms from all keywords
+            potential_matches = []
+            for filename, keywords in all_keywords.items():
+                for keyword in keywords:
+                    keyword_words = keyword.lower().split()
+                    # Check if any description word appears in keyword
+                    for desc_word in description_words:
+                        if any(desc_word in kw_word or kw_word in desc_word for kw_word in keyword_words):
+                            potential_matches.append({
+                                'file': filename,
+                                'keyword': keyword,
+                                'matched_term': desc_word
+                            })
+                            break
+            
+            # Build intelligent suggestions
+            suggestions = []
+            if potential_matches:
+                unique_files = list(set(m['file'] for m in potential_matches[:3]))
+                suggestions.append(f"Try searching for individual terms. Found potential matches in: {', '.join(unique_files[:3])}")
+            else:
+                suggestions.append("Try using 'Search_All_Context' to search across all file contents")
+                suggestions.append("Use 'List_Available_Context_Files' to see all available files")
+            
             return {
                 "success": True,
                 "description": description,
                 "matches_found": 0,
-                "suggestion": "No specific files matched your description. Try using 'Search_All_Context' to search across all files, or use 'List_Available_Context_Files' to see all available files.",
-                "results": []
+                "results": [],
+                "search_analysis": {
+                    "searched_for": description,
+                    "total_files_searched": total_files,
+                    "total_keywords_checked": total_keywords,
+                    "similarity_threshold": similarity_threshold,
+                    "extracted_terms": description_words[:10],  # Show first 10 terms
+                    "potential_related_files": [m['file'] for m in potential_matches[:5]] if potential_matches else [],
+                    "suggestions": suggestions
+                }
             }
         
         return {
