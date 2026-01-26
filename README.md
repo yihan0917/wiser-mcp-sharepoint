@@ -15,7 +15,7 @@ This MCP server connects AI agents to your SharePoint workspace, allowing them t
 
 ## ✨ Key Features
 
-### � **SharePoint Document Management**
+### 📁 **SharePoint Document Management**
 - List, create, and delete folders
 - Upload, download, and manage documents
 - Intelligent text extraction from PDFs, Word docs, Excel, and PowerPoint files
@@ -24,17 +24,19 @@ This MCP server connects AI agents to your SharePoint workspace, allowing them t
 - Validate data quality in HR Excel files
 - Calculate comprehensive recruiting metrics (time-to-hire, fill rates, etc.)
 - Analyze hiring trends, bottlenecks, and performance
-- Generate chart data for visualizations
+- AI-driven insights beyond pre-defined metrics using raw data analysis
 
 ### 📈 **Professional Report Generation**
 - Create PowerPoint presentations with automated charts and AI-generated insights
-- Create Excel files with embedded charts
+- Dynamic column detection for any data structure
 - Customizable templates and professional styling
 
-### 🔍 **Context Management**
-- Search organizational documentation and policies
+### 🔍 **Context Management & Search**
+- Search organizational documentation and policies with fuzzy matching (80%+ similarity)
 - Access role descriptions and hiring guidelines
 - Query column definitions for data analysis
+- Intelligent file discovery with exact, fuzzy, and partial matching
+- Enhanced search with 10-line context windows
 
 ## 🚀 Getting Started
 
@@ -102,32 +104,7 @@ You need to register an application in Azure to get credentials for SharePoint a
    pip install -r requirements.txt
    ```
 
-### Step 3: Configure Environment Variables
-
-Create a `.env` file in the project root directory with your credentials:
-
-```bash
-# Required SharePoint Credentials
-SHP_ID_APP=your-client-id-here
-SHP_ID_APP_SECRET=your-client-secret-here
-SHP_TENANT_ID=your-tenant-id-here
-SHP_SITE_URL=https://yourcompany.sharepoint.com/sites/YourSite
-SHP_DOC_LIBRARY=Shared Documents
-```
-
-**Important**: Replace the placeholder values with your actual credentials from Step 1.
-
-### Step 4: Test the Server
-
-Test that the server runs correctly:
-
-```bash
-python -m mcp_sharepoint
-```
-
-If successful, you should see log messages indicating the server has started.
-
-### Step 5: Connect to Your AI Agent
+### Step 3: Connect to Your AI Agent
 
 #### For Claude Desktop
 
@@ -188,7 +165,7 @@ If successful, you should see log messages indicating the server has started.
 
 4. **Save and Restart Windsurf**
 
-### Step 6: Verify Connection
+### Step 4: Verify Connection
 
 In your AI agent (Claude or Windsurf), try asking:
 
@@ -218,7 +195,7 @@ The server provides **20 tools** organized into these categories:
 |------|-------------|
 | `Validate_Excel_Data_Quality` | Check data quality in HR Excel files, identify missing data and anomalies |
 | `Calculate_HR_Metrics` | Calculate comprehensive recruiting metrics with pre-calculated metrics as reference plus raw data for AI-driven insights |
-| `Analyze_HR_File_Complete` | Complete analysis of HR Excel file including data quality, metrics, and chart data with raw data summaries for custom insights |
+| `Analyze_HR_File_Complete` | Complete analysis of HR Excel file including data quality, metrics, and chart data with raw data summaries for custom AI-driven insights |
 
 ### 📈 Report Generation (1 tool)
 
@@ -235,10 +212,10 @@ The server provides **20 tools** organized into these categories:
 | `Get_All_Column_Definitions` | Get all available column definitions |
 | `Get_Matching_Columns` | Get definitions for multiple columns at once |
 | `Get_Context_Summary` | Get summary of all loaded context files |
-| `Search_All_Context` | Search across all organizational documentation |
-| `Search_Specific_Context_File` | Search within a specific context file (e.g., hiring guide, role descriptions) |
+| `Search_All_Context` | Search across all organizational documentation with fuzzy matching |
+| `Search_Specific_Context_File` | Search within a specific context file with 10-line context windows |
 | `List_Available_Context_Files` | List all available context files by category |
-| `Find_Relevant_Context_Files` | Find context files based on natural language description |
+| `Find_Relevant_Context_Files` | Find context files using natural language with exact, fuzzy (80%+), and partial matching |
 
 ## 💡 Usage Examples
 
@@ -292,6 +269,28 @@ The AI will use `Upload_Document` to save the document to SharePoint.
 - **Check config path**: Verify the `cwd` path in your MCP configuration is correct
 - **View logs**: Check the AI agent's logs for error messages
 
+## 🆕 Recent Enhancements (v0.6.0)
+
+### Enhanced Search & Context Management
+- **Fuzzy Matching**: Find relevant files with 80%+ similarity, handles typos and variations
+- **Three-Tier Matching System**: Exact (100%), Fuzzy (50%), Partial (30%) scoring
+- **Expanded Context Windows**: Increased from 2 to 10 lines before/after search matches
+- **Enhanced No-Results Analysis**: Detailed search diagnostics with intelligent suggestions
+- **Standardized Naming**: Consistent `snake_case` convention across all context categories
+
+### AI-Driven Analytics
+- **Hybrid Analysis Model**: Pre-calculated metrics as reference + raw data for AI creativity
+- **Dynamic Column Detection**: Works with ANY data structure, not just HR-specific columns
+- **Statistical Summaries**: Automatic mean, median, std, min, max, quartiles for numeric columns
+- **Categorical Distributions**: Value counts for categorical columns
+- **Context-Aware Guidance**: 2000-3000 chars of business context per tool call
+
+### Context Files
+- **6 Categories**: columns, metrics, company_overview, engineering_overview, recruiting, file_naming
+- **2 Role Categories**: engineering_roles (16 files), operations_roles (1 file)
+- **200+ Keywords**: Intelligent file matching with expanded keyword coverage
+- **Career Path Framework**: L1-L10 progression for Engineering roles
+
 ## 🏗️ Architecture
 
 The server uses:
@@ -299,7 +298,8 @@ The server uses:
 - **MSAL authentication** for secure credential management
 - **Async/await** throughout for non-blocking operations
 - **Smart error handling** with decorators for cleaner code
-- **Context management system** for intelligent organizational knowledge retrieval
+- **Context management system** for intelligent organizational knowledge retrieval with fuzzy matching
+- **Dynamic data analysis** that adapts to any data structure
 
 ## 🐛 Debugging
 
