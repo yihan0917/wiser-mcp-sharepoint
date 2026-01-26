@@ -1,188 +1,315 @@
-# SharePoint MCP Server
+# Wiser SharePoint MCP Server
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![PyPI version](https://badge.fury.io/py/mcp-sharepoint.svg)](https://badge.fury.io/py/mcp-sharepoint)
 
-A comprehensive MCP Server for seamless integration with Microsoft SharePoint, enabling MCP clients to interact with documents, folders and other SharePoint resources. Built with efficiency and ease of use in mind, supporting both text and binary file operations. Developed by [sofias tech](https://github.com/Sofias-ai/mcp-sharepoint/).
+A powerful MCP Server for Microsoft SharePoint integration with advanced HR analytics and reporting capabilities. This server enables AI agents like Claude and Windsurf to interact with SharePoint documents, analyze HR data, and generate professional reports.
 
-<a href="https://glama.ai/mcp/servers/@Sofias-ai/mcp-sharepoint">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@Sofias-ai/mcp-sharepoint/badge" alt="SharePoint Server MCP server" />
-</a>
+## 🎯 What This Server Does
+
+This MCP server connects AI agents to your SharePoint workspace, allowing them to:
+- 📁 Browse and manage SharePoint folders and documents
+- 📊 Analyze HR recruiting data from Excel files
+- 📈 Generate professional PowerPoint presentations with insights
+- 🔍 Search through organizational context and documentation
+- 📝 Extract and process content from various file types (PDF, Word, Excel, PowerPoint)
 
 ## ✨ Key Features
 
-This server provides a clean, efficient interface to SharePoint resources through the Model Context Protocol (MCP), with optimized operations for document management and content processing.
+### 📁 **SharePoint Document Management**
+- List, create, and delete folders
+- Upload, download, and manage documents
+- Intelligent text extraction from PDFs, Word docs, Excel, and PowerPoint files
 
-### 🛠️ Available Tools
+### 📊 **HR Analytics & Reporting**
+- Validate data quality in HR Excel files
+- Calculate comprehensive recruiting metrics (time-to-hire, fill rates, etc.)
+- Analyze hiring trends, bottlenecks, and performance
+- AI-driven insights beyond pre-defined metrics using raw data analysis
 
-The server implements **10 comprehensive tools** for complete SharePoint management:
+### 📈 **Professional Report Generation**
+- Create PowerPoint presentations with automated charts and AI-generated insights
+- Dynamic column detection for any data structure
+- Customizable templates and professional styling
 
-#### 📁 **Folder Management**
-- **`List_SharePoint_Folders`**: Lists all folders in a specified directory or root
-- **`Create_Folder`**: Creates new folders in specified directories 
-- **`Delete_Folder`**: Safely deletes empty folders from SharePoint
-- **`Get_SharePoint_Tree`**: Gets a recursive tree view of SharePoint folder structure
+### 🔍 **Context Management & Search**
+- Search organizational documentation and policies with fuzzy matching (80%+ similarity)
+- Access role descriptions and hiring guidelines
+- Query column definitions for data analysis
+- Intelligent file discovery with exact, fuzzy, and partial matching
+- Enhanced search with 10-line context windows
 
-#### 📄 **Document Management**  
-- **`List_SharePoint_Documents`**: Fetches all documents within a specified folder with metadata
-- **`Get_Document_Content`**: Retrieves and processes document content (supports text extraction from PDF, Word, Excel)
-- **`Upload_Document`**: Uploads new documents to specified folders (supports both text and binary content)
-- **`Upload_Document_From_Path`**: Direct file upload from local filesystem for large files
-- **`Update_Document`**: Updates content of existing documents
-- **`Delete_Document`**: Removes documents from specified folders
+## 🚀 Getting Started
 
-### 🎯 **Advanced Content Processing**
+Follow these steps to set up and use the MCP server with your AI agent (Claude, Windsurf, etc.).
 
-The server includes intelligent content extraction capabilities:
+### Prerequisites
 
-- **📊 Excel Files**: Extracts data from all sheets, converts to readable text format (first 50 rows per sheet)
-- **📝 Word Documents**: Processes paragraphs and tables, maintaining structure
-- **📄 PDF Files**: Full text extraction using PyMuPDF for accurate content parsing
-- **📃 Text Files**: Direct processing of various text formats (JSON, XML, HTML, MD, code files)
-- **🔧 Binary Support**: Base64 encoding/decoding for seamless binary file handling
+- **Python 3.10 or higher** installed on your computer
+- **Microsoft Azure account** with access to create app registrations
+- **SharePoint site** where you want the MCP server to access documents
+
+### Step 1: Get SharePoint Credentials
+
+You need to register an application in Azure to get credentials for SharePoint access.
+
+1. **Go to Azure Portal**: Visit [portal.azure.com](https://portal.azure.com)
+2. **Navigate to App Registrations**: Search for "App registrations" in the top search bar
+3. **Create New Registration**:
+   - Click "New registration"
+   - Name: "SharePoint MCP Server" (or any name you prefer)
+   - Supported account types: "Accounts in this organizational directory only"
+   - Click "Register"
+
+4. **Get Your Credentials**:
+   - **Tenant ID**: Copy from the Overview page
+   - **Client ID (Application ID)**: Copy from the Overview page
+   - **Client Secret**: 
+     - Go to "Certificates & secrets" → "New client secret"
+     - Add description, set expiration
+     - **Copy the secret value immediately** (you won't see it again!)
+
+5. **Set SharePoint Permissions**:
+   - Go to "API permissions" → "Add a permission"
+   - Select "SharePoint" → "Application permissions"
+   - Add these permissions:
+     - `Sites.ReadWrite.All`
+     - `Files.ReadWrite.All`
+   - Click "Grant admin consent" (requires admin rights)
+
+6. **Get Your SharePoint Site URL**:
+   - Go to your SharePoint site in a browser
+   - Copy the URL (e.g., `https://yourcompany.sharepoint.com/sites/YourSite`)
+
+### Step 2: Clone and Install
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yihan0917/wiser-mcp-sharepoint.git
+   cd wiser-mcp-sharepoint
+   ```
+
+2. **Create a virtual environment** (recommended):
+   ```bash
+   python -m venv .venv
+   
+   # On macOS/Linux:
+   source .venv/bin/activate
+   
+   # On Windows:
+   .venv\Scripts\activate
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Step 3: Connect to Your AI Agent
+
+#### For Claude Desktop
+
+1. **Open Settings** → **Developer** → **Edit Config**. This will point you to the MCP config file 'claude_desktop_config.json'. Open it with a text editor.
+
+2. **Edit the config file** and add this MCP server configuration:
+
+```json
+{
+  "mcpServers": {
+    "wiser-sharepoint": {
+      "args": [
+        "/Users/username/full/path/to/wiser-mcp-sharepoint/src/mcp_sharepoint/server.py"
+      ],
+      "command": "/Users/username/full/path/to/wiser-mcp-sharepoint/venv/bin/python",
+      "env": {
+        "SHP_ID_APP": "your-client-id",
+        "SHP_ID_APP_SECRET": "your-client-secret",
+        "SHP_TENANT_ID": "your-tenant-id",
+        "SHP_SITE_URL": "https://yourcompany.sharepoint.com/sites/YourSite",
+        "SHP_DOC_LIBRARY": "Shared Documents"
+      }
+    }
+  }
+}
+```
+
+**Replace** `/full/path/to/wiser-mcp-sharepoint` with the actual path where you cloned the repository
+
+3. **Save and Restart Claude Desktop**
+
+#### For Windsurf
+
+1. **Open Windsurf** → **MCP Marketplace**
+2. **Click on the settings icon (gear icon)**. This will open the MCP config file.
+3. **Edit the config file** and add this MCP server configuration:
+
+```json
+{
+  "mcpServers": {
+    "wiser-sharepoint": {
+      "args": [
+        "/Users/username/full/path/to/wiser-mcp-sharepoint/src/mcp_sharepoint/server.py"
+      ],
+      "command": "/Users/username/full/path/to/wiser-mcp-sharepoint/venv/bin/python",
+      "env": {
+        "SHP_ID_APP": "your-client-id",
+        "SHP_ID_APP_SECRET": "your-client-secret",
+        "SHP_TENANT_ID": "your-tenant-id",
+        "SHP_SITE_URL": "https://yourcompany.sharepoint.com/sites/YourSite",
+        "SHP_DOC_LIBRARY": "Shared Documents"
+      }
+    }
+  }
+}
+```
+**Replace** `/full/path/to/wiser-mcp-sharepoint` with the actual path where you cloned the repository
+
+4. **Save and Restart Windsurf**
+
+### Step 4: Verify Connection
+
+In your AI agent (Claude or Windsurf), try asking:
+
+> "Can you list the folders in my SharePoint?"
+
+If the MCP server is connected correctly, the AI will use the `List_SharePoint_Folders` tool to show your SharePoint folders.
+
+## 🛠️ Available Tools
+
+The server provides **20 tools** organized into these categories:
+
+### 📁 SharePoint Document Management (7 tools)
+
+| Tool | Description |
+|------|-------------|
+| `List_SharePoint_Folders` | List all folders in a directory or root |
+| `List_SharePoint_Documents` | List all documents in a specific folder |
+| `Get_Document_Content` | Get content from a document (with text extraction for PDF, Word, Excel, PowerPoint) |
+| `Create_Folder` | Create a new folder in SharePoint |
+| `Upload_Document` | Upload a new document to SharePoint |
+| `Delete_Document` | Delete a document from SharePoint |
+| `Download_Document` | Download a document to your local filesystem |
+
+### 📊 HR Analytics & Data Quality (3 tools)
+
+| Tool | Description |
+|------|-------------|
+| `Validate_Excel_Data_Quality` | Check data quality in HR Excel files, identify missing data and anomalies |
+| `Calculate_HR_Metrics` | Calculate comprehensive recruiting metrics with pre-calculated metrics as reference plus raw data for AI-driven insights |
+| `Analyze_HR_File_Complete` | Complete analysis of HR Excel file including data quality, metrics, and chart data with raw data summaries for custom AI-driven insights |
+
+### 📈 Report Generation (1 tool)
+
+| Tool | Description |
+|------|-------------|
+| `Create_PowerPoint_Report` | Generate professional PowerPoint presentations with automated charts and optional AI-generated insight slides |
+
+### 🔍 Context & Knowledge Management (9 tools)
+
+| Tool | Description |
+|------|-------------|
+| `Get_Column_Definition` | Get definition for a specific Excel column |
+| `Search_Column_Definitions` | Search for column definitions by keyword |
+| `Get_All_Column_Definitions` | Get all available column definitions |
+| `Get_Matching_Columns` | Get definitions for multiple columns at once |
+| `Get_Context_Summary` | Get summary of all loaded context files |
+| `Search_All_Context` | Search across all organizational documentation with fuzzy matching |
+| `Search_Specific_Context_File` | Search within a specific context file with 10-line context windows |
+| `List_Available_Context_Files` | List all available context files by category |
+| `Find_Relevant_Context_Files` | Find context files using natural language with exact, fuzzy (80%+), and partial matching |
+
+## 💡 Usage Examples
+
+### Example 1: Analyze Recruiting Data
+
+> "Analyze the file 'Q3_Recruiting_Data.xlsx' in the 'Recruiting Data' folder and tell me the average time-to-hire"
+
+The AI will use `Analyze_HR_File_Complete` to process the Excel file and provide insights.
+
+### Example 2: Generate a Report
+
+> "Create a PowerPoint presentation analyzing Q3 recruiting performance from 'Training_Time_In_Step_Q3_97_records.xlsx' in 'Recruiting Data' folder, with insights and recommendations. Save to 'AI Generated Reports' folder."
+
+The AI will use `Create_PowerPoint_Report` to generate a professional presentation with charts and analysis.
+
+### Example 3: Search Documentation
+
+> "What are the requirements for a Senior Software Engineer role?"
+
+The AI will use `Search_All_Context` or `Find_Relevant_Context_Files` to search through role descriptions and provide the information.
+
+### Example 4: Upload a Document
+
+> "Upload this meeting summary as 'Team_Meeting_Notes.docx' to the 'Meeting Notes' folder"
+
+The AI will use `Upload_Document` to save the document to SharePoint.
+
+## 🔧 Troubleshooting
+
+### Server Won't Start
+
+- **Check Python version**: Ensure you have Python 3.10 or higher (`python --version`)
+- **Verify dependencies**: Run `pip install -r requirements.txt` again
+- **Check .env file**: Ensure all required variables are set correctly
+
+### Authentication Errors
+
+- **Verify credentials**: Double-check your Client ID, Client Secret, and Tenant ID
+- **Check permissions**: Ensure your Azure app has the required SharePoint permissions
+- **Admin consent**: Make sure admin consent was granted for the API permissions
+
+### Can't Find Files
+
+- **Check SHP_DOC_LIBRARY**: Ensure it matches your SharePoint library path (usually "Shared Documents")
+- **Verify folder names**: Folder names are case-sensitive
+- **Check permissions**: Ensure your Azure app has access to the SharePoint site
+
+### AI Agent Not Connecting
+
+- **Restart the agent**: Close and reopen Claude Desktop or Windsurf
+- **Check config path**: Verify the `cwd` path in your MCP configuration is correct
+- **View logs**: Check the AI agent's logs for error messages
+
+## 🆕 Recent Enhancements (v0.6.0)
+
+### Enhanced Search & Context Management
+- **Fuzzy Matching**: Find relevant files with 80%+ similarity, handles typos and variations
+- **Three-Tier Matching System**: Exact (100%), Fuzzy (50%), Partial (30%) scoring
+- **Expanded Context Windows**: Increased from 2 to 10 lines before/after search matches
+- **Enhanced No-Results Analysis**: Detailed search diagnostics with intelligent suggestions
+- **Standardized Naming**: Consistent `snake_case` convention across all context categories
+
+### AI-Driven Analytics
+- **Hybrid Analysis Model**: Pre-calculated metrics as reference + raw data for AI creativity
+- **Dynamic Column Detection**: Works with ANY data structure, not just HR-specific columns
+- **Statistical Summaries**: Automatic mean, median, std, min, max, quartiles for numeric columns
+- **Categorical Distributions**: Value counts for categorical columns
+- **Context-Aware Guidance**: 2000-3000 chars of business context per tool call
+
+### Context Files
+- **6 Categories**: columns, metrics, company_overview, engineering_overview, recruiting, file_naming
+- **2 Role Categories**: engineering_roles (16 files), operations_roles (1 file)
+- **200+ Keywords**: Intelligent file matching with expanded keyword coverage
+- **Career Path Framework**: L1-L10 progression for Engineering roles
 
 ## 🏗️ Architecture
 
-The server is built with resource efficiency and maintainability in mind:
+The server uses:
+- **Microsoft Graph API** for reliable SharePoint access
+- **MSAL authentication** for secure credential management
+- **Async/await** throughout for non-blocking operations
+- **Smart error handling** with decorators for cleaner code
+- **Context management system** for intelligent organizational knowledge retrieval with fuzzy matching
+- **Dynamic data analysis** that adapts to any data structure
 
-- **Efficient SharePoint API usage** with selective property loading to minimize bandwidth
-- **Smart error handling** through decorators for cleaner, more reliable code
-- **Clear separation of concerns** between resource management and tool implementation  
-- **Optimized content handling** for both text and binary files with automatic type detection
-- **Configurable tree operations** with depth limits and batch processing for large directories
-- **Async/await support** throughout for non-blocking operations
+## 🐛 Debugging
 
-## Setup
-
-1. Register an app in Azure AD with appropriate SharePoint permissions
-2. Obtain the client ID and client secret for the registered app
-3. Identify your SharePoint site URL and the document library path you want to work with
-
-## Environment Variables
-
-The server requires these environment variables:
-
-### Required Variables
-- `SHP_ID_APP`: Your Azure AD application client ID
-- `SHP_ID_APP_SECRET`: Your Azure AD application client secret
-- `SHP_SITE_URL`: The URL of your SharePoint site
-- `SHP_DOC_LIBRARY`: Path to the document library (default: "Shared Documents/mcp_server")
-- `SHP_TENANT_ID`: Your Microsoft tenant ID
-
-### Optional Configuration Variables
-- `SHP_MAX_DEPTH`: Maximum folder depth for tree operations (default: 15)
-- `SHP_MAX_FOLDERS_PER_LEVEL`: Maximum folders to process per level (default: 100)
-- `SHP_LEVEL_DELAY`: Delay in seconds between processing levels (default: 0.5)
-
-## Quickstart
-
-### Installation
+For advanced debugging, use the [MCP Inspector](https://github.com/modelcontextprotocol/inspector):
 
 ```bash
-pip install -e .
+npx @modelcontextprotocol/inspector python -m mcp_sharepoint
 ```
 
-Or install from PyPI once published:
-
-```bash
-pip install mcp-sharepoint-server
-```
-
-Using uv:
-
-```bash
-uv pip install mcp-sharepoint-server
-```
-
-### Claude Desktop Integration
-
-To integrate with Claude Desktop, update the configuration file:
-
-On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
-On macOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
-
-#### Standard Integration
-
-```json
-"mcpServers": {
-  "sharepoint": {
-    "command": "mcp-sharepoint",
-    "env": {
-      "SHP_ID_APP": "your-app-id",
-      "SHP_ID_APP_SECRET": "your-app-secret",
-      "SHP_SITE_URL": "https://your-tenant.sharepoint.com/sites/your-site",
-      "SHP_DOC_LIBRARY": "Shared Documents/your-folder",
-      "SHP_TENANT_ID": "your-tenant-id",
-      "SHP_MAX_DEPTH": "15",
-      "SHP_MAX_FOLDERS_PER_LEVEL": "100",
-      "SHP_LEVEL_DELAY": "0.5"
-    }
-  }
-}
-```
-
-#### Using uvx
-
-```json
-"mcpServers": {
-  "sharepoint": {
-    "command": "uvx",
-    "args": [
-      "mcp-sharepoint"
-    ],
-    "env": {
-      "SHP_ID_APP": "your-app-id",
-      "SHP_ID_APP_SECRET": "your-app-secret",
-      "SHP_SITE_URL": "https://your-tenant.sharepoint.com/sites/your-site",
-      "SHP_DOC_LIBRARY": "Shared Documents/your-folder",
-      "SHP_TENANT_ID": "your-tenant-id",
-      "SHP_MAX_DEPTH": "15",
-      "SHP_MAX_FOLDERS_PER_LEVEL": "100",
-      "SHP_LEVEL_DELAY": "0.5"
-    }
-  }
-}
-```
-
-## Development
-
-### Requirements
-
-- Python 3.10+
-- Dependencies listed in `requirements.txt` and `pyproject.toml`
-
-### Local Development
-
-1. Clone the repository
-2. Create a virtual environment:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-3. Install development dependencies:
-   ```bash
-   pip install -e .
-   ```
-4. Create a `.env` file with your SharePoint credentials:
-   ```
-   SHP_ID_APP=your-app-id
-   SHP_ID_APP_SECRET=your-app-secret
-   SHP_SITE_URL=https://your-tenant.sharepoint.com/sites/your-site
-   SHP_DOC_LIBRARY=Shared Documents/your-folder
-   SHP_TENANT_ID=your-tenant-id
-   ```
-5. Run the server:
-   ```bash
-   python -m mcp_sharepoint
-   ```
-
-### Debugging
-
-For debugging the MCP server, you can use the [MCP Inspector](https://github.com/modelcontextprotocol/inspector):
-
-```bash
-npx @modelcontextprotocol/inspector -- python -m mcp_sharepoint
-```
+This opens a web interface where you can test tools and see detailed request/response logs.
 
 ## License
 

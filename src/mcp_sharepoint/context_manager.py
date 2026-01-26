@@ -51,8 +51,6 @@ class ContextManager:
         'Calculate_HR_Metrics': ['file_naming', 'columns', 'recruiting', 'metrics'],
         'Validate_Excel_Data_Quality': ['file_naming', 'columns', 'recruiting', 'metrics'],
         'Create_PowerPoint_Report': ['file_naming', 'columns', 'recruiting', 'metrics'],
-        'Create_Excel_With_Charts': ['file_naming', 'columns', 'recruiting', 'metrics'],
-        'Generate_Chart_Data': ['file_naming', 'columns', 'recruiting', 'metrics'],
         'Get_Document_Content': ['file_naming', 'columns', 'recruiting', 'metrics', 'engineering_roles', 'operations_roles', 'company_overview', 'engineering_overview'],
         'List_SharePoint_Documents': ['file_naming'],
         'List_SharePoint_Folders': [],
