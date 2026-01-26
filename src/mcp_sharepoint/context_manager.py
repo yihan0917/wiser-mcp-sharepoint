@@ -14,18 +14,17 @@ class ContextManager:
     CONTEXT_CATEGORIES = {
         'columns': ['column_definitions.md'],
         'metrics': ['metrics_definitions.md'],
-        'business': ['company_overview.md', 'engineering_overview.md'],
-        'recruiting': ['hiring_guide.md', 'engineering_career_path.md'],
+        'company_overview': ['company_overview.md'],
+        'engineering_overview': ['engineering_overview.md'],
+        'recruiting': ['hiring_guide.md'],
         'file_naming': ['file_naming_convention.md'],
-        'roles': [
+        'engineering_roles': [
             # Software Engineering roles
             'software_engineer_role_description.md',
             # Data Management roles
             'data_management_role_description.md',
             # Engineering Leadership roles
             'engineering_leadership_role_description.md',
-            # ML/DS/DA roles - Index
-            'ml_ds_da_role_description.md',
             # ML/DS/DA roles - Detailed descriptions
             'Position-Description-MLE1-DS1.md',
             'Position-Description-DA1.md',
@@ -40,7 +39,7 @@ class ContextManager:
             'Position-Description-SEMLDS Manager.md',
             'Position-Description-Analytics Manager.md'
         ],
-        'operations': [
+        'operations_roles': [
             # In-Store Operations roles (separate from Engineering/Tech roles)
             'in_store_operations_role_description.md'
         ]
@@ -48,13 +47,13 @@ class ContextManager:
     
     # Map tools to the context categories they need
     TOOL_CONTEXT_MAP = {
-        'Analyze_HR_File_Complete': ['file_naming', 'columns', 'business', 'metrics', 'roles', 'operations'],
-        'Calculate_HR_Metrics': ['file_naming', 'columns', 'metrics', 'recruiting', 'roles', 'operations'],
-        'Validate_Excel_Data_Quality': ['file_naming', 'columns', 'recruiting', 'roles', 'operations'],
-        'Create_PowerPoint_Report': ['file_naming', 'columns', 'business', 'metrics', 'recruiting', 'roles', 'operations'],
-        'Create_Excel_With_Charts': ['file_naming', 'columns', 'metrics'],
-        'Generate_Chart_Data': ['file_naming', 'columns', 'metrics'],
-        'Get_Document_Content': ['file_naming', 'columns'],
+        'Analyze_HR_File_Complete': ['file_naming', 'columns', 'recruiting', 'metrics'],
+        'Calculate_HR_Metrics': ['file_naming', 'columns', 'recruiting', 'metrics'],
+        'Validate_Excel_Data_Quality': ['file_naming', 'columns', 'recruiting', 'metrics'],
+        'Create_PowerPoint_Report': ['file_naming', 'columns', 'recruiting', 'metrics'],
+        'Create_Excel_With_Charts': ['file_naming', 'columns', 'recruiting', 'metrics'],
+        'Generate_Chart_Data': ['file_naming', 'columns', 'recruiting', 'metrics'],
+        'Get_Document_Content': ['file_naming', 'columns', 'recruiting', 'metrics', 'engineering_roles', 'operations_roles', 'company_overview', 'engineering_overview'],
         'List_SharePoint_Documents': ['file_naming'],
         'List_SharePoint_Folders': [],
         'Upload_Document': ['file_naming'],
@@ -197,9 +196,9 @@ class ContextManager:
                         lines = content.split('\n')
                         for i, line in enumerate(lines):
                             if search_term.lower() in line.lower():
-                                # Get context around the match
-                                start = max(0, i - 2)
-                                end = min(len(lines), i + 3)
+                                # Get context around the match (10 lines before and after)
+                                start = max(0, i - 10)
+                                end = min(len(lines), i + 11)
                                 excerpt = '\n'.join(lines[start:end])
                                 
                                 results.append({
