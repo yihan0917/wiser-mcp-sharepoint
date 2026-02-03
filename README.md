@@ -84,7 +84,7 @@ You need to register an application in Azure to get credentials for SharePoint a
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yihan0917/wiser-mcp-sharepoint.git
+   git clone -b prod --single-branch https://github.com/yihan0917/wiser-mcp-sharepoint.git
    cd wiser-mcp-sharepoint
    ```
 
